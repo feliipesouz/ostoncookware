@@ -1,0 +1,42 @@
+@import "@oston/design-system/theme.css";
+@import "tailwindcss";
+
+@source not "../../node_modules";
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--background);
+  color: var(--foreground);
+  min-height: 100vh;
+  text-rendering: optimizeLegibility;
+}
+
+.font-display {
+  font-family: var(--font-display);
+  font-feature-settings: "kern" 1, "liga" 1;
+}
+
+.editorial-rule {
+  height: 1px;
+  background: var(--border-strong);
+  width: 4.5rem;
+}
+
+.site-grid {
+  width: min(var(--max-width), calc(100% - (var(--gutter) * 2)));
+  margin-inline: auto;
+}
+
+.hero-focal-center { object-position: center; }
+.hero-focal-top { object-position: top; }
+.hero-focal-bottom { object-position: bottom; }
+.hero-focal-left { object-position: left; }
+.hero-focal-right { object-position: right; }
+.hero-focal-top-left { object-position: top left; }
+.hero-focal-top-right { object-position: top right; }
+.hero-focal-bottom-left { object-position: bottom left; }
+.hero-focal-bottom-right { object-position: bottom right; }

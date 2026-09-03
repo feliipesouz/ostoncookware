@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2000 1400">
+  <rect width="2000" height="1400" fill="#f5f1e8"/>
+  <rect x="180" y="220" width="1640" height="960" fill="#efe7d8"/>
+  <rect x="260" y="300" width="900" height="800" fill="#e4d5bc"/>
+  <ellipse cx="1400" cy="820" rx="240" ry="40" fill="#d7c4a6"/>
+  <ellipse cx="1400" cy="700" rx="210" ry="150" fill="none" stroke="#a97845" stroke-width="10"/>
+  <text x="80" y="1320" fill="#171614" font-size="28" opacity="0.35">EXPERIÊNCIA · DEMO</text>
+</svg>

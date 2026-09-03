@@ -1,0 +1,155 @@
+/*
+ * OSTON design tokens
+ * --------------------
+ * Paleta centralizada. Alterar estas variáveis transforma a identidade visual
+ * do site inteiro. Não use cores hexadecimais soltas nos componentes.
+ *
+ * Direção: gastronomia contemporânea, editorial de luxo, quente e atemporal.
+ */
+
+:root {
+  color-scheme: light;
+
+  /* Surfaces */
+  --background: #f5f1e8;
+  --surface: #fbf8f1;
+  --surface-elevated: #ffffff;
+  --surface-inverse: #171614;
+
+  /* Text */
+  --foreground: #171614;
+  --foreground-muted: #777168;
+  --foreground-subtle: #9a9488;
+  --foreground-inverse: #f5f1e8;
+
+  /* Brand */
+  --brand: #a97845;
+  --brand-hover: #8f6438;
+  --brand-foreground: #fbf8f1;
+  --accent: #c29a68;
+  --accent-hover: #b58955;
+  --accent-foreground: #171614;
+
+  /* Line / focus */
+  --border: #e4ddd0;
+  --border-strong: #cfc6b6;
+  --ring: #a97845;
+
+  /* Feedback */
+  --success: #3f6b4a;
+  --success-foreground: #f5f1e8;
+  --warning: #b5812d;
+  --warning-foreground: #171614;
+  --danger: #9b3d2e;
+  --danger-foreground: #f5f1e8;
+
+  /* Named raw (for rare editorial exceptions like overlays) */
+  --ink: #171614;
+  --graphite: #292724;
+  --warm-stone: #777168;
+  --ivory: #f5f1e8;
+  --bronze: #a97845;
+  --soft-bronze: #c29a68;
+
+  /* Overlay */
+  --overlay: rgb(23 22 20 / 0.42);
+  --overlay-strong: rgb(23 22 20 / 0.62);
+
+  /* Elevation — restrained, not SaaS shadows */
+  --shadow-soft: 0 1px 0 rgb(23 22 20 / 0.04);
+
+  /* Motion */
+  --ease-editorial: cubic-bezier(0.22, 1, 0.36, 1);
+  --duration-reveal: 700ms;
+
+  /* Type */
+  --font-display: "Cormorant Garamond", "Times New Roman", serif;
+  --font-body: "Manrope", ui-sans-serif, system-ui, sans-serif;
+  --font-admin: "Manrope", ui-sans-serif, system-ui, sans-serif;
+
+  /* Layout */
+  --header-height: 5.25rem;
+  --max-width: 88rem;
+  --gutter: 1.25rem;
+}
+
+@media (min-width: 768px) {
+  :root {
+    --gutter: 2rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  :root {
+    --gutter: 2.5rem;
+  }
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-elevated: var(--surface-elevated);
+  --color-surface-inverse: var(--surface-inverse);
+  --color-foreground: var(--foreground);
+  --color-foreground-muted: var(--foreground-muted);
+  --color-foreground-subtle: var(--foreground-subtle);
+  --color-foreground-inverse: var(--foreground-inverse);
+  --color-brand: var(--brand);
+  --color-brand-hover: var(--brand-hover);
+  --color-brand-foreground: var(--brand-foreground);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-ring: var(--ring);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-danger: var(--danger);
+  --color-danger-foreground: var(--danger-foreground);
+  --color-ink: var(--ink);
+  --color-graphite: var(--graphite);
+  --color-warm-stone: var(--warm-stone);
+  --color-ivory: var(--ivory);
+  --color-bronze: var(--bronze);
+  --color-soft-bronze: var(--soft-bronze);
+
+  --font-display: var(--font-display);
+  --font-body: var(--font-body);
+  --font-admin: var(--font-admin);
+
+  --shadow-soft: var(--shadow-soft);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-reveal: 1ms;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+html,
+body {
+  background: var(--background);
+  color: var(--foreground);
+}
+
+::selection {
+  background: var(--brand);
+  color: var(--brand-foreground);
+}
+
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 3px;
+}

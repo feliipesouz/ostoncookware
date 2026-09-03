@@ -1,0 +1,61 @@
+# dependencies
+node_modules
+.pnpm-store
+.pnp
+.pnp.js
+
+# env & secrets
+.env
+.env.local
+.env.*.local
+!.env.example
+*.pem
+
+# builds
+dist
+build
+.next
+out
+.turbo
+.vercel
+.output
+
+# generated
+packages/database/src/generated
+**/*.tsbuildinfo
+
+# logs & debug
+logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+.DS_Store
+
+# tests & coverage
+coverage
+playwright-report
+test-results
+blob-report
+
+# databases
+*.db
+*.db-journal
+postgres-data
+
+# Next.js generated agent stubs (rewritten by `next dev`)
+apps/web/AGENTS.md
+apps/web/CLAUDE.md
+
+# IDE
+.idea
+.vscode/*
+!.vscode/extensions.json
+
+# OS
+Thumbs.db
+
+# temp
+tmp
+temp
+.cache

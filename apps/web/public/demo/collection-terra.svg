@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 2000">
+  <rect width="1600" height="2000" fill="#3b2a1f"/>
+  <ellipse cx="800" cy="1120" rx="430" ry="80" fill="#2a1d15"/>
+  <ellipse cx="800" cy="930" rx="370" ry="250" fill="none" stroke="#c29a68" stroke-width="12"/>
+  <ellipse cx="800" cy="900" rx="270" ry="170" fill="#5a3d28"/>
+  <text x="80" y="1880" fill="#f5f1e8" font-size="36" opacity="0.4">TERRA · DEMO</text>
+</svg>

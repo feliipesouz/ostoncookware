@@ -1,0 +1,15 @@
+[data-theme="admin"] {
+  --background: #f4f1ea;
+  --surface: #fbf8f2;
+  --surface-elevated: #ffffff;
+  --surface-inverse: #1c1b19;
+  --foreground: #1c1b19;
+  --foreground-muted: #6f6a63;
+  --border: #e6dfd3;
+  --font-body: var(--font-admin);
+}
+
+[data-theme="admin"] body {
+  font-family: var(--font-admin);
+  background: var(--background);
+}

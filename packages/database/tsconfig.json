@@ -1,0 +1,9 @@
+{
+  "extends": "@oston/config/typescript/node.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "rootDir": "."
+  },
+  "include": ["src/client.ts", "src/index.ts", "src/seed.ts", "prisma.config.ts"],
+  "exclude": ["src/generated"]
+}

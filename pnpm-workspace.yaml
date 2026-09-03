@@ -1,0 +1,10 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+
+onlyBuiltDependencies:
+  - prisma
+  - "@prisma/engines"
+  - esbuild
+  - unrs-resolver
+  - "@vercel/speed-insights"

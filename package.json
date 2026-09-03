@@ -1,0 +1,38 @@
+{
+  "name": "oston-cookware",
+  "private": true,
+  "packageManager": "pnpm@10.5.2",
+  "engines": {
+    "node": ">=20.11.0"
+  },
+  "scripts": {
+    "dev": "turbo run dev",
+    "dev:web": "turbo run dev --filter=@oston/web",
+    "dev:api": "turbo run dev --filter=@oston/api",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "test:e2e": "pnpm --filter @oston/web test:e2e",
+    "db:generate": "pnpm --filter @oston/database generate",
+    "db:migrate": "pnpm --filter @oston/database migrate",
+    "db:migrate:deploy": "pnpm --filter @oston/database migrate:deploy",
+    "db:seed": "pnpm --filter @oston/database seed",
+    "admin:create": "pnpm --filter @oston/api admin:create",
+    "format": "prettier --write ."
+  },
+  "devDependencies": {
+    "prettier": "3.9.6",
+    "turbo": "2.10.12",
+    "typescript": "5.9.3"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "prisma",
+      "@prisma/engines",
+      "esbuild",
+      "unrs-resolver",
+      "@vercel/speed-insights"
+    ]
+  }
+}

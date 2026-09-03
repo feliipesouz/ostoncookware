@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 2000">
+  <rect width="1600" height="2000" fill="#f5f1e8"/>
+  <rect x="0" y="0" width="1600" height="2000" fill="#e7dcc8"/>
+  <ellipse cx="820" cy="1080" rx="420" ry="80" fill="#d7c4a6"/>
+  <ellipse cx="820" cy="900" rx="360" ry="260" fill="none" stroke="#a97845" stroke-width="14"/>
+  <ellipse cx="820" cy="870" rx="270" ry="180" fill="#fbf8f1"/>
+  <text x="80" y="1880" fill="#171614" font-size="36" opacity="0.4">AURORA · DEMO</text>
+</svg>

@@ -1,0 +1,594 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/client"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  OWNER
+  ADMIN
+  EDITOR
+}
+
+enum ContentStatus {
+  DRAFT
+  SCHEDULED
+  PUBLISHED
+  ARCHIVED
+}
+
+enum MediaType {
+  IMAGE
+  VIDEO
+  DOCUMENT
+}
+
+enum ProductAvailability {
+  AVAILABLE
+  UNAVAILABLE
+  COMING_SOON
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  WON
+  LOST
+}
+
+enum LeadInterest {
+  COLLECTION
+  CONSULTANT
+  CATALOG
+  OTHER
+}
+
+enum CampaignTextAlign {
+  left
+  center
+  right
+}
+
+enum CampaignFocal {
+  center
+  top
+  bottom
+  left
+  right
+  top_left
+  top_right
+  bottom_left
+  bottom_right
+}
+
+model User {
+  id            String    @id
+  name          String
+  email         String
+  emailVerified Boolean   @default(false)
+  image         String?
+  role          UserRole  @default(EDITOR)
+  banned        Boolean   @default(false)
+  banReason     String?
+  banExpires    DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  sessions      Session[]
+  accounts      Account[]
+  mediaAssets   MediaAsset[] @relation("MediaCreatedBy")
+  auditLogs     AuditLog[]
+  campaignUpdates    Campaign[]        @relation("CampaignUpdatedBy")
+  collectionUpdates  Collection[]      @relation("CollectionUpdatedBy")
+  productUpdates     Product[]         @relation("ProductUpdatedBy")
+  contentRevisions   ContentRevision[]
+  redirectsCreated   Redirect[]
+  assignedLeads      Lead[]            @relation("LeadAssignee")
+  leadNotes          LeadNote[]
+
+  @@unique([email])
+  @@map("user")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  issuer                String
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@unique([issuer, accountId])
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String    @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
+}
+
+model MediaAsset {
+  id               String    @id @default(cuid())
+  url              String
+  pathname         String
+  originalFilename String
+  alt              String?
+  mimeType         String
+  size             Int
+  width            Int?
+  height           Int?
+  type             MediaType
+  focalX           Float?
+  focalY           Float?
+  tags             String[]  @default([])
+  createdById      String?
+  createdBy        User?     @relation("MediaCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt        DateTime  @default(now())
+
+  campaignDesktop  Campaign[]         @relation("CampaignDesktop")
+  campaignMobile   Campaign[]         @relation("CampaignMobile")
+  campaignVideo    Campaign[]         @relation("CampaignVideo")
+  collectionCovers Collection[]       @relation("CollectionCover")
+  collectionOg     Collection[]       @relation("CollectionOg")
+  collectionImages CollectionImage[]
+  productOg        Product[]          @relation("ProductOg")
+  productImages    ProductImage[]
+  settingsLogo     SiteSettings[]     @relation("SettingsLogo")
+  settingsLogoInv  SiteSettings[]     @relation("SettingsLogoInverse")
+  settingsFavicon  SiteSettings[]     @relation("SettingsFavicon")
+  settingsOg       SiteSettings[]     @relation("SettingsOg")
+  settingsCatalog  SiteSettings[]     @relation("SettingsCatalog")
+
+  @@unique([pathname])
+  @@index([type, createdAt])
+  @@index([createdAt])
+  @@map("media_asset")
+}
+
+model Campaign {
+  id                String             @id @default(cuid())
+  name              String
+  eyebrow           String?
+  title             String
+  subtitle          String?
+  desktopImageId    String
+  desktopImage      MediaAsset         @relation("CampaignDesktop", fields: [desktopImageId], references: [id], onDelete: Restrict)
+  mobileImageId     String
+  mobileImage       MediaAsset         @relation("CampaignMobile", fields: [mobileImageId], references: [id], onDelete: Restrict)
+  videoId           String?
+  video             MediaAsset?        @relation("CampaignVideo", fields: [videoId], references: [id], onDelete: SetNull)
+  imageAlt          String
+  primaryCtaLabel   String
+  primaryCtaUrl     String
+  secondaryCtaLabel String?
+  secondaryCtaUrl   String?
+  textAlign         CampaignTextAlign  @default(left)
+  focalPosition     CampaignFocal      @default(center)
+  overlay           Int                @default(42)
+  startsAt          DateTime?
+  endsAt            DateTime?
+  status            ContentStatus      @default(DRAFT)
+  sortOrder         Int                @default(0)
+  collectionId      String?
+  collection        Collection?        @relation(fields: [collectionId], references: [id], onDelete: SetNull)
+  version           Int                @default(1)
+  deletedAt         DateTime?
+  updatedById       String?
+  updatedBy         User?              @relation("CampaignUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  @@index([status, sortOrder, startsAt, endsAt])
+  @@index([deletedAt])
+  @@index([status, deletedAt])
+  @@map("campaign")
+}
+
+model Collection {
+  id                String            @id @default(cuid())
+  name              String
+  slug              String            @unique
+  shortDescription  String?
+  description       String?
+  coverImageId      String?
+  coverImage        MediaAsset?       @relation("CollectionCover", fields: [coverImageId], references: [id], onDelete: SetNull)
+  priceFrom         Decimal?          @db.Decimal(12, 2)
+  featured          Boolean           @default(false)
+  status            ContentStatus     @default(DRAFT)
+  sortOrder         Int               @default(0)
+  isDemo            Boolean           @default(false)
+  seoTitle          String?
+  seoDescription    String?
+  ogImageId         String?
+  ogImage           MediaAsset?       @relation("CollectionOg", fields: [ogImageId], references: [id], onDelete: SetNull)
+  canonicalPath     String?
+  version           Int               @default(1)
+  deletedAt         DateTime?
+  updatedById       String?
+  updatedBy         User?             @relation("CollectionUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  images            CollectionImage[]
+  products          Product[]
+  campaigns         Campaign[]
+  leads             Lead[]
+
+  @@index([status, featured, sortOrder])
+  @@index([featured])
+  @@index([deletedAt])
+  @@index([status, deletedAt])
+  @@map("collection")
+}
+
+model CollectionImage {
+  collectionId String
+  mediaId      String
+  sortOrder    Int        @default(0)
+  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  media        MediaAsset @relation(fields: [mediaId], references: [id], onDelete: Restrict)
+
+  @@id([collectionId, mediaId])
+  @@index([mediaId])
+  @@map("collection_image")
+}
+
+model Product {
+  id               String               @id @default(cuid())
+  collectionId     String
+  collection       Collection           @relation(fields: [collectionId], references: [id], onDelete: Restrict)
+  name             String
+  slug             String               @unique
+  sku              String?
+  shortDescription String?
+  description      String?
+  specifications   Json                 @default("[]")
+  features         Json                 @default("[]")
+  itemsIncluded    Json                 @default("[]")
+  details          Json                 @default("{}")
+  price            Decimal?             @db.Decimal(12, 2)
+  availability     ProductAvailability  @default(AVAILABLE)
+  featured         Boolean              @default(false)
+  status           ContentStatus        @default(DRAFT)
+  sortOrder        Int                  @default(0)
+  isDemo           Boolean              @default(false)
+  seoTitle         String?
+  seoDescription   String?
+  ogImageId        String?
+  ogImage          MediaAsset?          @relation("ProductOg", fields: [ogImageId], references: [id], onDelete: SetNull)
+  canonicalPath    String?
+  version          Int                  @default(1)
+  deletedAt        DateTime?
+  updatedById      String?
+  updatedBy        User?                @relation("ProductUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+  images           ProductImage[]
+  variants         ProductVariant[]
+
+  @@index([collectionId, status, sortOrder])
+  @@index([status, featured])
+  @@index([deletedAt])
+  @@index([status, deletedAt])
+  @@map("product")
+}
+
+model ProductImage {
+  productId String
+  mediaId   String
+  sortOrder Int         @default(0)
+  product   Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  media     MediaAsset  @relation(fields: [mediaId], references: [id], onDelete: Restrict)
+
+  @@id([productId, mediaId])
+  @@index([mediaId])
+  @@map("product_image")
+}
+
+model SiteSettings {
+  id                     String      @id
+  brandName              String
+  tagline                String?
+  logoId                 String?
+  logo                   MediaAsset? @relation("SettingsLogo", fields: [logoId], references: [id], onDelete: SetNull)
+  logoInverseId          String?
+  logoInverse            MediaAsset? @relation("SettingsLogoInverse", fields: [logoInverseId], references: [id], onDelete: SetNull)
+  faviconId              String?
+  favicon                MediaAsset? @relation("SettingsFavicon", fields: [faviconId], references: [id], onDelete: SetNull)
+  whatsapp               String?
+  phone                  String?
+  email                  String?
+  instagram              String?
+  facebook               String?
+  youtube                String?
+  addressLine            String?
+  addressCity            String?
+  addressState           String?
+  defaultSeoTitle        String
+  defaultSeoDescription  String
+  defaultOgImageId       String?
+  defaultOgImage         MediaAsset? @relation("SettingsOg", fields: [defaultOgImageId], references: [id], onDelete: SetNull)
+  footerText             String?
+  copyrightText          String?
+  catalogPdfId           String?
+  catalogPdf             MediaAsset? @relation("SettingsCatalog", fields: [catalogPdfId], references: [id], onDelete: SetNull)
+  vercelAnalyticsId      String?
+  gtmId                  String?
+  gaId                   String?
+  whatsappMessage        String?
+  businessHours          String?
+  privacyPolicyUrl       String?
+  termsUrl               String?
+  homepage               Json?
+  updatedAt              DateTime    @updatedAt
+
+  @@map("site_settings")
+}
+
+model Lead {
+  id              String        @id @default(cuid())
+  name            String
+  email           String?
+  phone           String
+  city            String?
+  state           String?
+  interest        LeadInterest  @default(CONSULTANT)
+  collectionId    String?
+  collection      Collection?   @relation(fields: [collectionId], references: [id], onDelete: SetNull)
+  message         String?
+  source          String?
+  landingPage     String?
+  utmSource       String?
+  utmMedium       String?
+  utmCampaign     String?
+  utmContent      String?
+  status          LeadStatus    @default(NEW)
+  notes           String?
+  assignedToId    String?
+  assignedTo      User?         @relation("LeadAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+  emailNormalized String?
+  phoneNormalized String?
+  tags            String[]      @default([])
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  leadNotes       LeadNote[]
+  activities      LeadActivity[]
+
+  @@index([status, createdAt])
+  @@index([createdAt])
+  @@index([phone])
+  @@index([assignedToId])
+  @@index([emailNormalized])
+  @@index([phoneNormalized])
+  @@map("lead")
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  actor      User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  actorEmail String?
+  action     String
+  entity     String
+  entityId   String?
+  metadata   Json?
+  ip         String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  @@index([entity, createdAt])
+  @@index([actorId, createdAt])
+  @@index([createdAt])
+  @@map("audit_log")
+}
+
+model RateLimit {
+  id          String @id
+  key         String
+  count       Int
+  lastRequest BigInt
+
+  @@unique([key])
+  @@map("rateLimit")
+}
+
+model Throttle {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  count       Int
+  windowStart DateTime
+  expiresAt   DateTime
+
+  @@index([expiresAt])
+  @@map("throttle")
+}
+
+model ContentRevision {
+  id            String   @id @default(cuid())
+  entityType    String
+  entityId      String
+  version       Int
+  snapshot      Json
+  changedById   String?
+  changedBy     User?    @relation(fields: [changedById], references: [id], onDelete: SetNull)
+  changeSummary String?
+  createdAt     DateTime @default(now())
+
+  @@unique([entityType, entityId, version])
+  @@index([entityType, entityId, createdAt])
+  @@map("content_revision")
+}
+
+model Redirect {
+  id          String   @id @default(cuid())
+  sourcePath  String
+  destination String
+  statusCode  Int      @default(301)
+  active      Boolean  @default(true)
+  createdById String?
+  createdBy   User?    @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
+
+  @@unique([sourcePath])
+  @@index([active, sourcePath])
+  @@map("redirect")
+}
+
+model Homepage {
+  id        String   @id
+  sections  Json     @default("[]")
+  version   Int      @default(1)
+  updatedAt DateTime @updatedAt
+
+  @@map("homepage")
+}
+
+model NavigationMenu {
+  id    String           @id @default(cuid())
+  key   String           @unique
+  name  String
+  items NavigationItem[]
+
+  @@map("navigation_menu")
+}
+
+model NavigationItem {
+  id        String           @id @default(cuid())
+  menuId    String
+  menu      NavigationMenu   @relation(fields: [menuId], references: [id], onDelete: Cascade)
+  parentId  String?
+  parent    NavigationItem?  @relation("NavTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children  NavigationItem[] @relation("NavTree")
+  label     String
+  href      String
+  kind      String           @default("INTERNAL")
+  enabled   Boolean          @default(true)
+  sortOrder Int              @default(0)
+
+  @@index([menuId, sortOrder])
+  @@map("navigation_item")
+}
+
+model Announcement {
+  id        String    @id @default(cuid())
+  message   String
+  ctaLabel  String?
+  ctaUrl    String?
+  active    Boolean   @default(false)
+  startsAt  DateTime?
+  endsAt    DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([active, startsAt, endsAt])
+  @@map("announcement")
+}
+
+model Page {
+  id             String        @id @default(cuid())
+  slug           String        @unique
+  title          String
+  eyebrow        String?
+  body           String        @db.Text
+  status         ContentStatus @default(DRAFT)
+  version        Int           @default(1)
+  deletedAt      DateTime?
+  seoTitle       String?
+  seoDescription String?
+  ogImageId      String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@index([status, slug])
+  @@map("page")
+}
+
+model LeadNote {
+  id        String   @id @default(cuid())
+  leadId    String
+  lead      Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  authorId  String?
+  author    User?    @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  content   String
+  createdAt DateTime @default(now())
+
+  @@index([leadId, createdAt])
+  @@map("lead_note")
+}
+
+model LeadActivity {
+  id        String   @id @default(cuid())
+  leadId    String
+  lead      Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  actorId   String?
+  type      String
+  message   String
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  @@index([leadId, createdAt])
+  @@map("lead_activity")
+}
+
+model ProductVariant {
+  id           String               @id @default(cuid())
+  productId    String
+  product      Product              @relation(fields: [productId], references: [id], onDelete: Cascade)
+  name         String
+  sku          String?
+  attributes   Json                 @default("{}")
+  price        Decimal?             @db.Decimal(12, 2)
+  availability ProductAvailability  @default(AVAILABLE)
+  sortOrder    Int                  @default(0)
+  status       ContentStatus        @default(DRAFT)
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+
+  @@index([productId, sortOrder])
+  @@map("product_variant")
+}
+
+model BusinessEvent {
+  id        String   @id @default(cuid())
+  type      String
+  metadata  Json?
+  ipHash    String?
+  createdAt DateTime @default(now())
+
+  @@index([type, createdAt])
+  @@map("business_event")
+}

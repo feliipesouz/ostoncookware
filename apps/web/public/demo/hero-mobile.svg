@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1800" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="gm" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#211c18"/>
+      <stop offset="1" stop-color="#171614"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="1800" fill="url(#gm)"/>
+  <ellipse cx="600" cy="820" rx="280" ry="48" fill="#111"/>
+  <ellipse cx="600" cy="720" rx="250" ry="170" fill="none" stroke="#c29a68" stroke-width="8"/>
+  <ellipse cx="600" cy="700" rx="190" ry="120" fill="#292724"/>
+  <text x="80" y="1680" fill="#f5f1e8" font-size="28" opacity="0.35">OSTON · DEMO</text>
+</svg>

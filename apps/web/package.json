@@ -1,0 +1,36 @@
+{
+  "name": "@oston/web",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --port 3000",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test:e2e": "playwright test"
+  },
+  "dependencies": {
+    "@oston/contracts": "workspace:*",
+    "@oston/design-system": "workspace:*",
+    "@vercel/analytics": "1.5.0",
+    "@vercel/blob": "2.8.0",
+    "@vercel/speed-insights": "1.2.0",
+    "next": "16.3.4",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "zod": "4.5.4"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.55.1",
+    "@oston/config": "workspace:*",
+    "@tailwindcss/postcss": "4.1.16",
+    "@types/node": "24.6.0",
+    "@types/react": "19.2.2",
+    "@types/react-dom": "19.2.2",
+    "eslint": "9.37.0",
+    "eslint-config-next": "16.3.4",
+    "tailwindcss": "4.1.16",
+    "typescript": "5.9.3"
+  }
+}
