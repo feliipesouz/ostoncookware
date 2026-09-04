@@ -195,6 +195,7 @@ export function CollectionForm({ id, initial }: { id?: string; initial?: Record<
         </Field>
         <Field label="Slug">
           <input
+            data-testid="collection-slug"
             className={fieldClass}
             value={form.slug}
             onChange={(e) => {
@@ -269,7 +270,12 @@ export function CollectionForm({ id, initial }: { id?: string; initial?: Record<
           <span className="text-sm text-foreground-muted">versão {form.version}</span>
         </div>
         <Field label="Status">
-          <select className={fieldClass} value={form.status} onChange={(e) => patch({ status: e.target.value })}>
+          <select
+            data-testid="collection-status"
+            className={fieldClass}
+            value={form.status}
+            onChange={(e) => patch({ status: e.target.value })}
+          >
             <option value="DRAFT">Rascunho</option>
             <option value="SCHEDULED">Agendada</option>
             <option value="PUBLISHED">Publicada</option>

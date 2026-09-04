@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { loginAsAdmin } from "./helpers";
 
 const email = process.env.E2E_ADMIN_EMAIL;
 const password = process.env.E2E_ADMIN_PASSWORD;
@@ -7,30 +8,22 @@ test.describe("fluxo editorial", () => {
   test.skip(!email || !password, "E2E_ADMIN_EMAIL/PASSWORD não definidos");
 
   test("login cria coleção em rascunho e publica", async ({ page }) => {
-    await page.goto("/admin/login");
-    await page.locator('input[name="email"]').fill(email!);
-    await page.locator('input[name="password"]').fill(password!);
-    await page.getByRole("button", { name: /entrar/i }).click();
-    await expect(page).toHaveURL(/\/admin/, { timeout: 20_000 });
+    await loginAsAdmin(page);
 
     const slug = `e2e-colecao-${Date.now()}`;
     await page.goto("/admin/colecoes/nova");
-    await page.getByLabel("Nome").fill("Coleção Editorial E2E");
-    await page.getByLabel("Slug").fill(slug);
+    await page.getByTestId("collection-name").fill("Coleção Editorial E2E");
+    await page.getByTestId("collection-slug").fill(slug);
     await page.getByTestId("save-draft").click();
     await expect(page.getByText(/último salvamento|rascunho/i)).toBeVisible({ timeout: 20_000 });
-    await expect(page).toHaveURL(new RegExp(`/admin/colecoes/.+`), { timeout: 20_000 });
+    await expect(page).toHaveURL(/\/admin\/colecoes\/.+/, { timeout: 20_000 });
 
     await page.getByTestId("publish").click();
     await expect(page.getByText(/publicado|publicada/i)).toBeVisible({ timeout: 20_000 });
   });
 
   test("histórico do produto abre e restaura se houver versão", async ({ page }) => {
-    await page.goto("/admin/login");
-    await page.locator('input[name="email"]').fill(email!);
-    await page.locator('input[name="password"]').fill(password!);
-    await page.getByRole("button", { name: /entrar/i }).click();
-    await expect(page).toHaveURL(/\/admin/, { timeout: 20_000 });
+    await loginAsAdmin(page);
 
     await page.goto("/admin/produtos");
     const first = page.locator('table a[href^="/admin/produtos/"]').first();
