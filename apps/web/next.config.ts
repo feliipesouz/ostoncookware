@@ -37,6 +37,11 @@ const csp = [
 
 const nextConfig: NextConfig = {
   outputFileTracingRoot: monorepoRoot,
+  outputFileTracingIncludes: {
+    "/v1/**": ["./node_modules/pg/**", "./node_modules/fastify/**", "./node_modules/better-auth/**"],
+    "/api/**": ["./node_modules/pg/**", "./node_modules/fastify/**", "./node_modules/better-auth/**"],
+    "/ready": ["./node_modules/pg/**", "./node_modules/fastify/**"],
+  },
   transpilePackages: ["@oston/api", "@oston/contracts", "@oston/database", "@oston/design-system"],
   serverExternalPackages: [
     "fastify",
