@@ -68,6 +68,31 @@ export function parseOrigins(value: string, extras: string[] = []) {
   return unique;
 }
 
+function publicSiteUrl(source: NodeJS.ProcessEnv) {
+  if (source.NEXT_PUBLIC_SITE_URL) return source.NEXT_PUBLIC_SITE_URL;
+  const vercel =
+    source.VERCEL_PROJECT_PRODUCTION_URL ?? source.VERCEL_URL ?? source.VERCEL_BRANCH_URL;
+  if (vercel) return `https://${vercel.replace(/^https?:\/\//, "")}`;
+  return "http://localhost:3000";
+}
+
+function isNextProductionBuild() {
+  return process.env.NEXT_PHASE === "phase-production-build";
+}
+
+function withBuildFallbacks(source: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
+  if (!isNextProductionBuild()) return source;
+  const site = publicSiteUrl(source);
+  return {
+    ...source,
+    DATABASE_URL: source.DATABASE_URL ?? "postgresql://build:build@127.0.0.1:5432/build",
+    BETTER_AUTH_SECRET: source.BETTER_AUTH_SECRET ?? "next-build-placeholder-secret-32ch",
+    BETTER_AUTH_URL: source.BETTER_AUTH_URL ?? site,
+    WEB_ORIGIN: source.WEB_ORIGIN ?? site,
+    REVALIDATION_SECRET: source.REVALIDATION_SECRET ?? "next-build-revalidate",
+  };
+}
+
 let cached: Env | null = null;
 
 export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
@@ -75,7 +100,7 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
     return cached;
   }
 
-  const parsed = envSchema.safeParse(source);
+  const parsed = envSchema.safeParse(withBuildFallbacks(source));
 
   if (!parsed.success) {
     const details = parsed.error.issues
