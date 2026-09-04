@@ -1,9 +1,7 @@
 import { defaultFooterNavigation, defaultHeaderNavigation, defaultHomepageSections } from "@/lib/cms-defaults";
-import { adminFetch } from "@/lib/admin";
 import type { HomepageSection } from "@oston/contracts";
 import type { NavigationItem } from "@oston/contracts";
 import { draftMode } from "next/headers";
-import { publicGet } from "./public-api";
 
 export type Media = {
   id: string;
@@ -132,6 +130,7 @@ export async function isDraftEnabled() {
 }
 
 async function previewGet<T>(path: string): Promise<T> {
+  const { adminFetch } = await import("@/lib/admin");
   const response = await adminFetch(path, {
     headers: { Accept: "application/json" },
   });
@@ -141,12 +140,18 @@ async function previewGet<T>(path: string): Promise<T> {
   return response.json() as Promise<T>;
 }
 
+async function loadPublicGet() {
+  const { publicGet } = await import("./public-api");
+  return publicGet;
+}
+
 export async function getPublicSite() {
   if (await isDraftEnabled()) {
     try {
       const payload = await previewGet<{ data: PublicSite }>("/v1/admin/preview/site");
       return payload.data;
     } catch {
+      const publicGet = await loadPublicGet();
       const payload = await publicGet<{ data: PublicSite }>(
         "/v1/public/site",
         ["site", "campaigns", "collections", "settings", "homepage", "navigation", "announcements", "pages"],
@@ -155,6 +160,7 @@ export async function getPublicSite() {
     }
   }
 
+  const publicGet = await loadPublicGet();
   const payload = await publicGet<{ data: PublicSite }>(
     "/v1/public/site",
     ["site", "campaigns", "collections", "settings", "homepage", "navigation", "announcements", "pages"],
@@ -256,6 +262,7 @@ export async function getPublicSiteSafe() {
 }
 
 export async function getCollections() {
+  const publicGet = await loadPublicGet();
   const payload = await publicGet<{ data: Collection[] }>("/v1/public/collections", [
     "collections",
   ]);
@@ -273,6 +280,7 @@ export async function getCollectionPage(slug: string) {
       // fall through to public
     }
   }
+  const publicGet = await loadPublicGet();
   const payload = await publicGet<{ data: { collection: Collection; products: Product[] } }>(
     `/v1/public/collections/${slug}`,
     ["collections", "products"],
@@ -289,6 +297,7 @@ export async function getProduct(slug: string) {
       // fall through to public
     }
   }
+  const publicGet = await loadPublicGet();
   const payload = await publicGet<{ data: Product }>(`/v1/public/products/${slug}`, ["products"]);
   return payload.data;
 }
@@ -302,6 +311,7 @@ export async function getInstitutionalPage(slug: string) {
       // fall through to public
     }
   }
+  const publicGet = await loadPublicGet();
   const payload = await publicGet<{ data: InstitutionalPage }>(`/v1/public/pages/${slug}`, ["pages"]);
   return payload.data;
 }

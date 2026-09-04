@@ -2,6 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { apiOrigin } from "@/lib/api-origin";
 import { isSkippableRedirectPath, lookupPublicRedirect } from "@/lib/redirect-lookup";
 
+function withPathname(request: NextRequest, pathname: string) {
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-pathname", pathname);
+  return NextResponse.next({ request: { headers: requestHeaders } });
+}
+
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const api = apiOrigin(request);
@@ -23,14 +29,14 @@ export async function proxy(request: NextRequest) {
       return NextResponse.redirect(new URL("/admin/login", request.url));
     }
 
-    const next = NextResponse.next();
+    const next = withPathname(request, pathname);
     next.headers.set("Cache-Control", "no-store, private");
     next.headers.set("X-Robots-Tag", "noindex, nofollow");
     return next;
   }
 
   if (isSkippableRedirectPath(pathname)) {
-    return NextResponse.next();
+    return withPathname(request, pathname);
   }
 
   const match = await lookupPublicRedirect(pathname, api);
@@ -39,12 +45,12 @@ export async function proxy(request: NextRequest) {
       ? match.destination
       : new URL(match.destination, request.url).toString();
     if (new URL(destination, request.url).pathname.startsWith("/admin")) {
-      return NextResponse.next();
+      return withPathname(request, pathname);
     }
     return NextResponse.redirect(destination, match.statusCode);
   }
 
-  return NextResponse.next();
+  return withPathname(request, pathname);
 }
 
 export const config = {

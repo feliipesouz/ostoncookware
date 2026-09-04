@@ -80,16 +80,19 @@ function isNextProductionBuild() {
   return process.env.NEXT_PHASE === "phase-production-build";
 }
 
-function withBuildFallbacks(source: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
-  if (!isNextProductionBuild()) return source;
+function withEnvFallbacks(source: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
   const site = publicSiteUrl(source);
+  const build = isNextProductionBuild();
   return {
     ...source,
-    DATABASE_URL: source.DATABASE_URL ?? "postgresql://build:build@127.0.0.1:5432/build",
-    BETTER_AUTH_SECRET: source.BETTER_AUTH_SECRET ?? "next-build-placeholder-secret-32ch",
+    DATABASE_URL:
+      source.DATABASE_URL ?? (build ? "postgresql://build:build@127.0.0.1:5432/build" : source.DATABASE_URL),
+    BETTER_AUTH_SECRET:
+      source.BETTER_AUTH_SECRET ?? (build ? "next-build-placeholder-secret-32ch" : source.BETTER_AUTH_SECRET),
     BETTER_AUTH_URL: source.BETTER_AUTH_URL ?? site,
     WEB_ORIGIN: source.WEB_ORIGIN ?? site,
-    REVALIDATION_SECRET: source.REVALIDATION_SECRET ?? "next-build-revalidate",
+    REVALIDATION_SECRET:
+      source.REVALIDATION_SECRET ?? (build ? "next-build-revalidate" : source.REVALIDATION_SECRET),
   };
 }
 
@@ -100,7 +103,7 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
     return cached;
   }
 
-  const parsed = envSchema.safeParse(withBuildFallbacks(source));
+  const parsed = envSchema.safeParse(withEnvFallbacks(source));
 
   if (!parsed.success) {
     const details = parsed.error.issues

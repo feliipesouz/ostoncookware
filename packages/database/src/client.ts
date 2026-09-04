@@ -11,9 +11,9 @@ loadDotenv({ path: resolve(process.cwd(), ".env.local") });
 loadDotenv();
 
 function createAdapter(connectionString: string) {
-  // Na Vercel o adapter serverless (WebSocket) é o certo.
-  // No laptop / CI, TCP via `pg` evita falha de WebSocket no Neon.
-  if (connectionString.includes("neon.tech") && process.env.VERCEL) {
+  // Node (Vercel serverless e CLI) fala com o Neon por TCP.
+  // O adapter WebSocket quebra no bundle webpack do Next.
+  if (connectionString.includes("neon.tech") && process.env.PRISMA_ADAPTER === "neon") {
     return new PrismaNeon({ connectionString });
   }
 
