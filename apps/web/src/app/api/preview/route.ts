@@ -1,3 +1,4 @@
+import { dispatchApi } from "@/lib/dispatch-api";
 import { previewPathFromParams, resolvePreviewAccess } from "@/lib/preview";
 import { draftMode } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
@@ -5,10 +6,8 @@ import { NextRequest, NextResponse } from "next/server";
 export const dynamic = "force-dynamic";
 
 async function isAdmin(request: NextRequest) {
-  const api = process.env.API_URL ?? "http://localhost:4000";
-  const response = await fetch(`${api}/v1/admin/me`, {
+  const response = await dispatchApi("/v1/admin/me", {
     headers: { cookie: request.headers.get("cookie") ?? "" },
-    cache: "no-store",
   });
   return response.ok;
 }

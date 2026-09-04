@@ -29,14 +29,14 @@ export default function AdminLoginPage() {
         setLoading(false);
         setError(
           response.status >= 500
-            ? "Não foi possível conectar à API. Confirme se ela está no ar na porta 4000."
+            ? "Não foi possível autenticar agora. Tente de novo em instantes."
             : "E-mail ou senha inválidos.",
         );
         return;
       }
     } catch {
       setLoading(false);
-      setError("Não foi possível conectar à API. Confirme se ela está no ar na porta 4000.");
+      setError("Não foi possível autenticar agora. Tente de novo em instantes.");
       return;
     }
 

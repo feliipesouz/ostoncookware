@@ -44,6 +44,8 @@ export function isSkippableRedirectPath(pathname: string) {
     pathname.startsWith("/api") ||
     pathname.startsWith("/_next") ||
     pathname.startsWith("/v1") ||
+    pathname === "/health" ||
+    pathname === "/ready" ||
     /\.[a-zA-Z0-9]+$/.test(pathname)
   );
 }

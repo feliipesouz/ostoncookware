@@ -1,13 +1,9 @@
-import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { PageHeader } from "@/components/admin/ui/page-header";
+import { adminFetch } from "@/lib/admin";
 
 async function getMe() {
-  const api = process.env.API_URL ?? "http://localhost:4000";
-  const response = await fetch(`${api}/v1/admin/me`, {
-    headers: { cookie: (await cookies()).toString() },
-    cache: "no-store",
-  });
+  const response = await adminFetch("/v1/admin/me");
   if (!response.ok) return null;
   return response.json() as Promise<{ role?: string }>;
 }
@@ -18,11 +14,7 @@ export default async function SystemPage() {
     redirect("/admin");
   }
 
-  const api = process.env.API_URL ?? "http://localhost:4000";
-  const response = await fetch(`${api}/v1/admin/system`, {
-    headers: { cookie: (await cookies()).toString() },
-    cache: "no-store",
-  });
+  const response = await adminFetch("/v1/admin/system");
   const data = response.ok
     ? ((await response.json()) as {
         api: string;

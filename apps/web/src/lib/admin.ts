@@ -1,12 +1,16 @@
 import { cookies } from "next/headers";
+import { dispatchApi } from "@/lib/dispatch-api";
 
-const API = () => process.env.API_URL ?? "http://localhost:4000";
+export async function adminFetch(path: string, init: RequestInit = {}) {
+  const headers = new Headers(init.headers);
+  if (!headers.has("cookie")) {
+    headers.set("cookie", (await cookies()).toString());
+  }
+  return dispatchApi(path, { ...init, headers });
+}
 
 export async function adminGet<T>(path: string): Promise<T> {
-  const response = await fetch(`${API()}${path}`, {
-    headers: { cookie: (await cookies()).toString() },
-    cache: "no-store",
-  });
+  const response = await adminFetch(path);
   if (!response.ok) {
     throw new Error(`Admin GET ${path} failed`);
   }

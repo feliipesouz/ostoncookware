@@ -1,8 +1,9 @@
 import { defaultFooterNavigation, defaultHeaderNavigation, defaultHomepageSections } from "@/lib/cms-defaults";
+import { adminFetch } from "@/lib/admin";
 import type { HomepageSection } from "@oston/contracts";
 import type { NavigationItem } from "@oston/contracts";
-import { cookies, draftMode } from "next/headers";
-import { publicGet } from "./api";
+import { draftMode } from "next/headers";
+import { publicGet } from "./public-api";
 
 export type Media = {
   id: string;
@@ -131,13 +132,8 @@ export async function isDraftEnabled() {
 }
 
 async function previewGet<T>(path: string): Promise<T> {
-  const api = process.env.API_URL ?? "http://localhost:4000";
-  const response = await fetch(`${api}${path}`, {
-    headers: {
-      Accept: "application/json",
-      cookie: (await cookies()).toString(),
-    },
-    cache: "no-store",
+  const response = await adminFetch(path, {
+    headers: { Accept: "application/json" },
   });
   if (!response.ok) {
     throw new Error(`Preview GET ${path} failed`);

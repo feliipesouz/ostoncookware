@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
+import { apiOrigin } from "@/lib/api-origin";
 import { isSkippableRedirectPath, lookupPublicRedirect } from "@/lib/redirect-lookup";
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const api = apiOrigin(request);
 
   if (pathname.startsWith("/admin") && !pathname.startsWith("/admin/login")) {
-    const api = process.env.API_URL ?? "http://localhost:4000";
     const response = await fetch(`${api}/api/auth/get-session`, {
       headers: {
         cookie: request.headers.get("cookie") ?? "",
@@ -32,7 +33,7 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const match = await lookupPublicRedirect(pathname, process.env.API_URL ?? "http://localhost:4000");
+  const match = await lookupPublicRedirect(pathname, api);
   if (match) {
     const destination = match.destination.startsWith("http")
       ? match.destination

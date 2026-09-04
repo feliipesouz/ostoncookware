@@ -1,14 +1,9 @@
 import { UsersTable } from "@/components/admin/users-table";
 import { PageHeader } from "@/components/admin/ui/page-header";
-import { adminGet } from "@/lib/admin";
-import { cookies } from "next/headers";
+import { adminFetch, adminGet } from "@/lib/admin";
 
 async function getRole() {
-  const api = process.env.API_URL ?? "http://localhost:4000";
-  const response = await fetch(`${api}/v1/admin/me`, {
-    headers: { cookie: (await cookies()).toString() },
-    cache: "no-store",
-  });
+  const response = await adminFetch("/v1/admin/me");
   if (!response.ok) return null;
   const me = (await response.json()) as { role?: string };
   return me.role ?? null;

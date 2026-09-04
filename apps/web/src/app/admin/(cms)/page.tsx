@@ -1,15 +1,11 @@
 import Link from "next/link";
-import { cookies } from "next/headers";
 import { PageHeader } from "@/components/admin/ui/page-header";
 import { StatusBadge } from "@/components/admin/ui/status-badge";
+import { adminFetch } from "@/lib/admin";
 import { formatRelativeDay } from "@/lib/admin-format";
 
 async function loadDashboard() {
-  const api = process.env.API_URL ?? "http://localhost:4000";
-  const response = await fetch(`${api}/v1/admin/dashboard`, {
-    headers: { cookie: (await cookies()).toString() },
-    cache: "no-store",
-  });
+  const response = await adminFetch("/v1/admin/dashboard");
   if (!response.ok) {
     return null;
   }

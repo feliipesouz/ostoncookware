@@ -16,12 +16,12 @@ packages/design-system tokens visuais
 
 ```text
 Browser
-  → Next.js (same-origin)
-    → /api/auth/* e /v1/*  (rewrite)
-      → Fastify
+  → Next.js (mesmo origin)
+    → /api/auth/* e /v1/*
+      → Fastify no mesmo processo
 ```
 
-O rewrite **não** é barreira de segurança. Toda rota privada autentica e autoriza na API.
+Na Vercel isso é **um projeto só**. Localmente o Fastify ainda pode subir em `:4000` para e2e e scripts. Toda rota privada autentica e autoriza na API.
 
 - Cookies first-party, HttpOnly, SameSite=Lax, Secure em production.
 - Better Auth. Sem cadastro público. RBAC `OWNER | ADMIN | EDITOR` no backend.
@@ -55,7 +55,7 @@ DIRECT_URL="postgresql://oston:oston@localhost:5433/oston?sslmode=disable"
 
 No `.env`, mantenha os demais valores locais (`BETTER_AUTH_*`, `WEB_ORIGIN`, `ADMIN_*`, etc.). `ADMIN_PASSWORD` precisa de no mínimo 12 caracteres, com letras e números. O comando nunca imprime a senha.
 
-Não use `NEXT_PUBLIC_API_URL`. O browser consome `/v1` e `/api/auth` no mesmo origin.
+Não use `NEXT_PUBLIC_API_URL`. O browser consome `/v1` e `/api/auth` no mesmo origin. `API_URL` só serve para e2e apontar a API isolada em `:4000`.
 
 ## Banco, seed e primeiro admin
 
@@ -78,7 +78,8 @@ pnpm dev
 
 - Site: http://localhost:3000
 - Admin: http://localhost:3000/admin
-- API: http://localhost:4000/health
+- Saúde da API no site: http://localhost:3000/health
+- API isolada (e2e): http://localhost:4000/health
 
 ## Qualidade
 
@@ -98,25 +99,28 @@ pnpm test:e2e
 
 ## Deploy na Vercel
 
-Dois projetos no mesmo monorepo.
-
-### oston-web
+Um projeto no mesmo monorepo. Site e API sobem juntos.
 
 - Root Directory: `apps/web`
 - Framework: Next.js
-- Build: `cd ../.. && pnpm install && pnpm --filter @oston/web build`
-- Env: `API_URL` (URL do projeto API), `NEXT_PUBLIC_SITE_URL`, `REVALIDATION_SECRET`
-- Não coloque `BLOB_READ_WRITE_TOKEN`, `DATABASE_URL` ou `BETTER_AUTH_SECRET` no web
+- Install / build já estão em `apps/web/vercel.json`
 
-### oston-api
+Env (Production e Preview separados):
 
-- Root Directory: `apps/api`
-- Framework: Other
-- Build: `cd ../.. && pnpm install && pnpm --filter @oston/database generate && pnpm --filter @oston/api build`
-- Output: serverless `api/index.ts`
-- Env: `DATABASE_URL` (Neon **pooled**), `DIRECT_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL` (URL do **web**), `WEB_ORIGIN` (allowlist exata, vírgula), `REVALIDATION_SECRET`, `BLOB_READ_WRITE_TOKEN`
+| Variável | Valor |
+| --- | --- |
+| `DATABASE_URL` | Neon **pooled** (`-pooler`, `sslmode=require`) |
+| `DIRECT_URL` | Neon **direta** (migrations) |
+| `BETTER_AUTH_SECRET` | ≥ 32 caracteres aleatórios |
+| `BETTER_AUTH_URL` | URL pública do site |
+| `WEB_ORIGIN` | a mesma origin; várias separadas por vírgula |
+| `NEXT_PUBLIC_SITE_URL` | URL pública do site |
+| `REVALIDATION_SECRET` | string longa aleatória |
+| `BLOB_READ_WRITE_TOKEN` | token do Vercel Blob |
 
-Rode `pnpm db:migrate:deploy` no release da API. Não rode migrate destrutiva automaticamente em cada Preview.
+Não defina `API_URL` na Vercel. Não coloque `ADMIN_EMAIL` / `ADMIN_PASSWORD` no runtime.
+
+Depois do primeiro deploy, rode `pnpm db:migrate:deploy` contra o Neon de production e `pnpm admin:create` na sua máquina. Não rode migrate destrutiva automaticamente em cada Preview.
 
 ## Neon — production vs preview
 

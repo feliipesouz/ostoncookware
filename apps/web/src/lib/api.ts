@@ -1,5 +1,3 @@
-const API_URL = process.env.API_URL ?? "http://localhost:4000";
-
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -27,19 +25,6 @@ function demoPublicPath(path: string) {
     return `${path.slice(0, -4)}.png`;
   }
   return path;
-}
-
-export async function publicGet<T>(path: string, tags: string[]): Promise<T> {
-  const response = await fetch(`${API_URL}${path}`, {
-    next: { tags, revalidate: 60 },
-    headers: { Accept: "application/json" },
-  });
-
-  if (!response.ok) {
-    throw new ApiError(`Falha ao carregar ${path}`, response.status);
-  }
-
-  return (await response.json()) as T;
 }
 
 export function whatsappLink(phone: string | null | undefined, message: string) {

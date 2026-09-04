@@ -1,6 +1,6 @@
-import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { AdminShell, type NavGroup } from "@/components/admin/admin-shell";
+import { adminFetch } from "@/lib/admin";
 
 const navGroups: NavGroup[] = [
   {
@@ -42,11 +42,7 @@ const navGroups: NavGroup[] = [
 ];
 
 async function getMe() {
-  const api = process.env.API_URL ?? "http://localhost:4000";
-  const response = await fetch(`${api}/v1/admin/me`, {
-    headers: { cookie: (await cookies()).toString() },
-    cache: "no-store",
-  });
+  const response = await adminFetch("/v1/admin/me");
   if (!response.ok) {
     return null;
   }
@@ -55,10 +51,7 @@ async function getMe() {
 
 async function logout() {
   "use server";
-  await fetch(`${process.env.API_URL ?? "http://localhost:4000"}/api/auth/sign-out`, {
-    method: "POST",
-    headers: { cookie: (await cookies()).toString() },
-  });
+  await adminFetch("/api/auth/sign-out", { method: "POST" });
   redirect("/admin/login");
 }
 

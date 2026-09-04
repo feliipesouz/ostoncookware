@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-const apiUrl = process.env.API_URL ?? "http://localhost:4000";
+const monorepoRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const isProd = process.env.VERCEL_ENV === "production" || process.env.NODE_ENV === "production";
 
 const scriptSrc = [
@@ -34,7 +36,27 @@ const csp = [
 ].join("; ");
 
 const nextConfig: NextConfig = {
-  transpilePackages: ["@oston/contracts", "@oston/design-system"],
+  outputFileTracingRoot: monorepoRoot,
+  transpilePackages: ["@oston/api", "@oston/contracts", "@oston/database", "@oston/design-system"],
+  serverExternalPackages: [
+    "fastify",
+    "@fastify/cors",
+    "@fastify/helmet",
+    "@fastify/rate-limit",
+    "@prisma/adapter-neon",
+    "@prisma/adapter-pg",
+    "@prisma/client",
+    "@prisma/client-runtime-utils",
+    "pg",
+  ],
+  webpack: (config) => {
+    config.resolve.extensionAlias = {
+      ...(config.resolve.extensionAlias ?? {}),
+      ".js": [".ts", ".js"],
+      ".jsx": [".tsx", ".jsx"],
+    };
+    return config;
+  },
   typedRoutes: false,
   images: {
     dangerouslyAllowSVG: true,
@@ -87,12 +109,6 @@ const nextConfig: NextConfig = {
           { key: "X-Robots-Tag", value: "noindex, nofollow" },
         ],
       },
-    ];
-  },
-  async rewrites() {
-    return [
-      { source: "/api/auth/:path*", destination: `${apiUrl}/api/auth/:path*` },
-      { source: "/v1/:path*", destination: `${apiUrl}/v1/:path*` },
     ];
   },
 };
