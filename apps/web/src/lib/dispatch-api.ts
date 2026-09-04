@@ -7,7 +7,15 @@ export async function dispatchApi(path: string, init: RequestInit = {}) {
 }
 
 export async function handleApiRoute(request: Request) {
-  return handleWebRequest(request);
+  try {
+    return await handleWebRequest(request);
+  } catch (error) {
+    console.error("[oston-api]", error);
+    return Response.json(
+      { status: "error", message: "API unavailable" },
+      { status: 503 },
+    );
+  }
 }
 
 export const apiRouteHandlers = {

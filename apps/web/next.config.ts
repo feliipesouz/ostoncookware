@@ -47,6 +47,8 @@ const nextConfig: NextConfig = {
     "@prisma/adapter-pg",
     "@prisma/client",
     "@prisma/client-runtime-utils",
+    "@neondatabase/serverless",
+    "better-auth",
     "pg",
   ],
   webpack: (config) => {
