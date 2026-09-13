@@ -37,7 +37,12 @@ const csp = [
 
 const apiTraceIncludes = [
   "./node_modules/pg/**",
+  "./node_modules/pg-pool/**",
+  "./node_modules/pg-types/**",
   "./node_modules/@prisma/**",
+  "../../node_modules/pg/**",
+  "../../node_modules/pg-pool/**",
+  "../../node_modules/@prisma/**",
   "../../node_modules/.pnpm/pg@*/**",
   "../../node_modules/.pnpm/@prisma+adapter-pg@*/**",
   "../../node_modules/.pnpm/@prisma+client@*/**",
@@ -47,24 +52,26 @@ const apiTraceIncludes = [
 const nextConfig: NextConfig = {
   outputFileTracingRoot: monorepoRoot,
   outputFileTracingIncludes: {
-    "/api/**": apiTraceIncludes,
-    "/v1/**": apiTraceIncludes,
+    "/*": apiTraceIncludes,
+    "/api/auth/[...path]": apiTraceIncludes,
+    "/api/diag": apiTraceIncludes,
+    "/v1/[[...path]]": apiTraceIncludes,
     "/ready": apiTraceIncludes,
+    "/admin/login": apiTraceIncludes,
   },
   transpilePackages: ["@oston/api", "@oston/contracts", "@oston/database", "@oston/design-system"],
-  serverExternalPackages: [
-    "@prisma/adapter-neon",
-    "@prisma/adapter-pg",
-    "@prisma/client",
-    "@prisma/client-runtime-utils",
-    "@neondatabase/serverless",
-    "pg",
-  ],
+  // pg e o adapter entram no bundle webpack. Se forem external, o build
+  // encontra node_modules e o runtime da Vercel não.
+  serverExternalPackages: [],
   webpack: (config) => {
     config.resolve.extensionAlias = {
       ...(config.resolve.extensionAlias ?? {}),
       ".js": [".ts", ".js"],
       ".jsx": [".tsx", ".jsx"],
+    };
+    config.resolve.alias = {
+      ...(config.resolve.alias ?? {}),
+      "pg-native": false,
     };
     return config;
   },

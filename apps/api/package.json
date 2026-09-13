@@ -5,6 +5,7 @@
   "type": "module",
   "exports": {
     "./app": "./src/app.ts",
+    "./auth": "./src/modules/auth/infrastructure/auth.ts",
     "./handler": "./src/http-adapter.ts"
   },
   "scripts": {
