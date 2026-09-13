@@ -114,9 +114,15 @@ importers:
       better-auth:
         specifier: 1.7.2
         version: 1.7.2(@prisma/client@7.10.0(prisma@7.10.0(@types/react-dom@19.2.2(@types/react@19.2.2))(@types/react@19.2.2)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(typescript@5.9.3))(typescript@5.9.3))(mysql2@3.15.3)(next@16.3.4(@babel/core@7.29.7)(@playwright/test@1.55.1)(@types/node@24.6.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(pg@8.16.3)(prisma@7.10.0(@types/react-dom@19.2.2(@types/react@19.2.2))(@types/react@19.2.2)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(typescript@5.9.3))(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(vitest@3.2.6(@types/node@24.6.0)(jiti@2.7.0)(lightningcss@1.30.2)(tsx@4.20.6)(yaml@2.9.0))
+      dotenv:
+        specifier: 17.2.3
+        version: 17.2.3
       fastify:
         specifier: 5.12.1
         version: 5.12.1
+      light-my-request:
+        specifier: 6.6.0
+        version: 6.6.0
       next:
         specifier: 16.3.4
         version: 16.3.4(@babel/core@7.29.7)(@playwright/test@1.55.1)(@types/node@24.6.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)

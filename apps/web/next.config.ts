@@ -35,25 +35,29 @@ const csp = [
   ...(isProd ? ["upgrade-insecure-requests"] : []),
 ].join("; ");
 
+const apiTraceIncludes = [
+  "./node_modules/pg/**",
+  "./node_modules/@prisma/**",
+  "../../node_modules/.pnpm/pg@*/**",
+  "../../node_modules/.pnpm/@prisma+adapter-pg@*/**",
+  "../../node_modules/.pnpm/@prisma+client@*/**",
+  "../../packages/database/src/generated/**",
+];
+
 const nextConfig: NextConfig = {
   outputFileTracingRoot: monorepoRoot,
   outputFileTracingIncludes: {
-    "/v1/**": ["./node_modules/pg/**", "./node_modules/fastify/**", "./node_modules/better-auth/**"],
-    "/api/**": ["./node_modules/pg/**", "./node_modules/fastify/**", "./node_modules/better-auth/**"],
-    "/ready": ["./node_modules/pg/**", "./node_modules/fastify/**"],
+    "/api/**": apiTraceIncludes,
+    "/v1/**": apiTraceIncludes,
+    "/ready": apiTraceIncludes,
   },
   transpilePackages: ["@oston/api", "@oston/contracts", "@oston/database", "@oston/design-system"],
   serverExternalPackages: [
-    "fastify",
-    "@fastify/cors",
-    "@fastify/helmet",
-    "@fastify/rate-limit",
     "@prisma/adapter-neon",
     "@prisma/adapter-pg",
     "@prisma/client",
     "@prisma/client-runtime-utils",
     "@neondatabase/serverless",
-    "better-auth",
     "pg",
   ],
   webpack: (config) => {

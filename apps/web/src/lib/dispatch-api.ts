@@ -7,8 +7,15 @@ export async function dispatchApi(path: string, init: RequestInit = {}) {
 }
 
 function publicApiError(error: unknown) {
-  const message = error instanceof Error ? error.message : "API unavailable";
-  return message.replace(/[a-z][a-z0-9+.-]*:\/\/[^\s"'\\]+/gi, "[redacted]");
+  const raw =
+    error instanceof Error
+      ? `${error.name}: ${error.message}${
+          error.cause instanceof Error ? ` (${error.cause.message})` : ""
+        }`
+      : typeof error === "string"
+        ? error
+        : "API unavailable";
+  return raw.replace(/[a-z][a-z0-9+.-]*:\/\/[^\s"'\\]+/gi, "[redacted]");
 }
 
 export async function handleApiRoute(request: Request) {

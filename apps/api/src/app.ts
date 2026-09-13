@@ -33,15 +33,19 @@ let appPromise: Promise<FastifyInstance> | null = null;
 export async function buildApp() {
   const env = loadEnv();
 
+  const onVercel = Boolean(process.env.VERCEL);
   const app = Fastify({
-    logger: {
-      level: env.isProduction ? "info" : "debug",
-      redact: {
-        paths: PINO_REDACT_PATHS,
-        censor: "[redacted]",
-        remove: false,
-      },
-    },
+    // Pino/thread-stream quebram no bundle serverless da Vercel.
+    logger: onVercel
+      ? false
+      : {
+          level: env.isProduction ? "info" : "debug",
+          redact: {
+            paths: PINO_REDACT_PATHS,
+            censor: "[redacted]",
+            remove: false,
+          },
+        },
     requestIdHeader: "x-request-id",
     genReqId: () => randomUUID(),
     bodyLimit: 1_048_576,
@@ -98,7 +102,10 @@ export async function buildApp() {
 
 export function getApp() {
   if (!appPromise) {
-    appPromise = buildApp();
+    appPromise = buildApp().catch((error) => {
+      appPromise = null;
+      throw error;
+    });
   }
   return appPromise;
 }
