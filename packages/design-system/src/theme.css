@@ -62,10 +62,14 @@
   --ease-editorial: cubic-bezier(0.22, 1, 0.36, 1);
   --duration-reveal: 700ms;
 
-  /* Type */
-  --font-display: "Cormorant Garamond", "Times New Roman", serif;
-  --font-body: "Manrope", ui-sans-serif, system-ui, sans-serif;
-  --font-admin: "Manrope", ui-sans-serif, system-ui, sans-serif;
+  /* Type — stacks are the source of truth. @theme cannot reuse the same
+     custom-property name or :root becomes a cycle and font-family goes invalid. */
+  --font-display-stack: "Cormorant Garamond", "Times New Roman", serif;
+  --font-body-stack: "Manrope", ui-sans-serif, system-ui, sans-serif;
+  --font-admin-stack: "Manrope", ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-display-stack);
+  --font-body: var(--font-body-stack);
+  --font-admin: var(--font-admin-stack);
 
   /* Layout */
   --header-height: 5.25rem;
@@ -116,11 +120,9 @@
   --color-bronze: var(--bronze);
   --color-soft-bronze: var(--soft-bronze);
 
-  --font-display: var(--font-display);
-  --font-body: var(--font-body);
-  --font-admin: var(--font-admin);
-
-  --shadow-soft: var(--shadow-soft);
+  --font-display: var(--font-display-stack);
+  --font-body: var(--font-body-stack);
+  --font-admin: var(--font-admin-stack);
 }
 
 @media (prefers-reduced-motion: reduce) {

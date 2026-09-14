@@ -64,7 +64,7 @@ export function AdminShell({
 
   const sidebar = (
     <aside
-      className={`flex h-full flex-col border-r border-white/10 bg-surface-inverse text-foreground-inverse ${
+      className={`flex h-full shrink-0 flex-col border-r border-white/10 bg-surface-inverse text-foreground-inverse ${
         compact ? "w-[4.5rem] p-3" : "w-64 p-6"
       }`}
     >
@@ -132,8 +132,8 @@ export function AdminShell({
   );
 
   return (
-    <div className="min-h-screen lg:flex">
-      <div className="hidden lg:block">{sidebar}</div>
+    <div className="min-h-screen tracking-normal lg:flex">
+      <div className="hidden shrink-0 lg:block">{sidebar}</div>
       {mobileOpen ? (
         <div className="fixed inset-0 z-40 lg:hidden">
           <div className="absolute inset-0 bg-ink/50" onClick={() => setMobileOpen(false)} />
