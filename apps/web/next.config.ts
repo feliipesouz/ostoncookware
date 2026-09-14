@@ -35,30 +35,8 @@ const csp = [
   ...(isProd ? ["upgrade-insecure-requests"] : []),
 ].join("; ");
 
-const apiTraceIncludes = [
-  "./node_modules/pg/**",
-  "./node_modules/pg-pool/**",
-  "./node_modules/pg-types/**",
-  "./node_modules/@prisma/**",
-  "../../node_modules/pg/**",
-  "../../node_modules/pg-pool/**",
-  "../../node_modules/@prisma/**",
-  "../../node_modules/.pnpm/pg@*/**",
-  "../../node_modules/.pnpm/@prisma+adapter-pg@*/**",
-  "../../node_modules/.pnpm/@prisma+client@*/**",
-  "../../packages/database/src/generated/**",
-];
-
 const nextConfig: NextConfig = {
   outputFileTracingRoot: monorepoRoot,
-  outputFileTracingIncludes: {
-    "/*": apiTraceIncludes,
-    "/api/auth/[...path]": apiTraceIncludes,
-    "/api/diag": apiTraceIncludes,
-    "/v1/[[...path]]": apiTraceIncludes,
-    "/ready": apiTraceIncludes,
-    "/admin/login": apiTraceIncludes,
-  },
   transpilePackages: ["@oston/api", "@oston/contracts", "@oston/database", "@oston/design-system"],
   // pg e o adapter entram no bundle webpack. Se forem external, o build
   // encontra node_modules e o runtime da Vercel não.
