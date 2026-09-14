@@ -74,13 +74,13 @@ export function SeoPanel({
       </div>
       <div className="grid gap-4 lg:grid-cols-2">
         <div className="border border-border bg-background p-4">
-          <p className="text-[0.65rem] tracking-[0.18em] uppercase text-foreground-muted">Prévia Google</p>
+          <p className="text-[0.65rem] uppercase text-foreground-muted">Prévia Google</p>
           <p className="mt-3 text-xs text-success">{site} {previewPath}</p>
           <p className="mt-1 text-base text-[#1a0dab]">{title}</p>
           <p className="mt-1 text-sm text-foreground-muted">{description || "A description aparece aqui."}</p>
         </div>
         <div className="overflow-hidden border border-border bg-background">
-          <p className="px-4 pt-4 text-[0.65rem] tracking-[0.18em] uppercase text-foreground-muted">Card de compartilhamento</p>
+          <p className="px-4 pt-4 text-[0.65rem] uppercase text-foreground-muted">Card de compartilhamento</p>
           {ogImage ? (
             <div className="mt-3 aspect-[1.91/1] bg-graphite">
               {/* eslint-disable-next-line @next/next/no-img-element */}

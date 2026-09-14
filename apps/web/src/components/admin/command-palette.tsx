@@ -99,7 +99,7 @@ export function CommandPalette({
           ) : (
             visibleGroups.map((group) => (
               <section key={group.type} className="mb-4">
-                <h3 className="text-xs uppercase tracking-[0.16em] text-foreground-muted">
+                <h3 className="text-xs uppercase text-foreground-muted">
                   {GROUP_LABEL[group.type] ?? group.type}
                 </h3>
                 <ul className="mt-2">

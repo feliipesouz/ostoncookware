@@ -46,7 +46,7 @@ export default function AdminLoginPage() {
 
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-6">
-      <p className="text-[0.7rem] tracking-[0.42em] uppercase text-brand">OSTON CMS</p>
+      <p className="admin-brand text-[0.7rem] uppercase text-brand">OSTON CMS</p>
       <h1 className="mt-4 text-3xl">Entrar</h1>
       <form onSubmit={onSubmit} className="mt-8 grid gap-4">
         <label className="grid gap-2 text-sm">

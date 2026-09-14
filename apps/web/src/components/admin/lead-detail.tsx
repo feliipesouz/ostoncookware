@@ -252,7 +252,7 @@ export function LeadDetail({
 function Field({ label, value }: { label: string; value: string | null | undefined }) {
   return (
     <div>
-      <dt className="text-xs uppercase tracking-[0.16em] text-foreground-muted">{label}</dt>
+      <dt className="text-xs uppercase text-foreground-muted">{label}</dt>
       <dd className="mt-1">{value || "—"}</dd>
     </div>
   );

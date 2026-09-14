@@ -14,7 +14,13 @@
   word-spacing: 0;
 }
 
-[data-theme="admin"] :where(*):not([class*="tracking-"]) {
+/* Nenhuma página do CMS herda o tracking editorial do site público.
+   Tracking só entra de novo em .admin-brand (logotipo da sidebar). */
+[data-theme="admin"] :where(*) {
   letter-spacing: 0 !important;
   word-spacing: 0 !important;
+}
+
+[data-theme="admin"] .admin-brand {
+  letter-spacing: 0.1em !important;
 }

@@ -191,7 +191,7 @@ function Breakdown({ title, rows }: { title: string; rows: { label: string; coun
 function Card({ label, value, href, hint }: { label: string; value: number; href: string; hint?: string }) {
   return (
     <Link href={href} className="border border-border bg-surface p-5">
-      <p className="text-xs tracking-[0.2em] uppercase text-foreground-muted">{label}</p>
+      <p className="text-xs uppercase text-foreground-muted">{label}</p>
       <p className="mt-3 text-4xl">{value}</p>
       {hint ? <p className="mt-2 text-xs text-foreground-muted">{hint}</p> : null}
     </Link>

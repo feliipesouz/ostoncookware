@@ -16,7 +16,7 @@ const TONES: Record<string, { label: string; className: string }> = {
 export function StatusBadge({ status }: { status: string }) {
   const tone = TONES[status] ?? { label: status, className: "bg-foreground/10 text-foreground-muted" };
   return (
-    <span className={`inline-flex px-2 py-0.5 text-[0.65rem] tracking-[0.14em] uppercase ${tone.className}`}>
+    <span className={`inline-flex px-2 py-0.5 text-[0.65rem] uppercase ${tone.className}`}>
       {tone.label}
     </span>
   );

@@ -70,12 +70,12 @@ export function AdminShell({
     >
       <div className="flex items-start justify-between gap-2">
         <div className={compact ? "hidden" : "block"}>
-          <p className="text-2xl tracking-[0.2em]">OSTON</p>
-          <p className="mt-1 text-[0.65rem] tracking-[0.28em] uppercase text-accent">CMS</p>
+          <p className="admin-brand text-2xl">OSTON</p>
+          <p className="admin-brand mt-1 text-[0.65rem] uppercase text-accent">CMS</p>
         </div>
         <button
           type="button"
-          className="hidden rounded px-2 py-1 text-xs uppercase tracking-[0.16em] text-foreground-inverse/70 hover:bg-white/5 lg:inline"
+          className="hidden rounded px-2 py-1 text-xs uppercase text-foreground-inverse/70 hover:bg-white/5 lg:inline"
           onClick={() => setCollapsed((value) => !value)}
           aria-label={collapsed ? "Expandir menu" : "Recolher menu"}
         >
@@ -83,7 +83,7 @@ export function AdminShell({
         </button>
       </div>
       {!isProduction ? (
-        <p className={`mt-4 bg-warning/20 px-2 py-1 text-[0.65rem] tracking-[0.16em] uppercase text-warning ${compact ? "text-center" : ""}`}>
+        <p className={`mt-4 bg-warning/20 px-2 py-1 text-[0.65rem] uppercase text-warning ${compact ? "text-center" : ""}`}>
           {compact ? "STG" : environmentLabel}
         </p>
       ) : null}
@@ -98,7 +98,7 @@ export function AdminShell({
         {visibleGroups.map((group) => (
           <div key={group.label}>
             {compact ? null : (
-              <p className="mb-2 px-2 text-[0.6rem] tracking-[0.22em] uppercase text-foreground-inverse/40">{group.label}</p>
+              <p className="mb-2 px-2 text-[0.6rem] uppercase text-foreground-inverse/40">{group.label}</p>
             )}
             <div className="grid gap-0.5">
               {group.items.map((item) => (
@@ -118,7 +118,7 @@ export function AdminShell({
         ))}
       </nav>
       <form action={logoutAction} className="mt-6">
-        <button type="submit" className="text-xs tracking-[0.2em] uppercase text-accent">
+        <button type="submit" className="text-xs uppercase text-accent">
           Sair
         </button>
       </form>
@@ -133,7 +133,7 @@ export function AdminShell({
   );
 
   return (
-    <div className="min-h-screen tracking-normal lg:flex">
+    <div className="min-h-screen lg:flex">
       <div className="hidden shrink-0 lg:block">{sidebar}</div>
       {mobileOpen ? (
         <div className="fixed inset-0 z-40 lg:hidden">
@@ -146,7 +146,7 @@ export function AdminShell({
           <button type="button" className="text-sm" onClick={() => setMobileOpen(true)} aria-label="Abrir menu">
             Menu
           </button>
-          <p className="text-sm tracking-[0.2em]">OSTON</p>
+          <p className="admin-brand text-sm">OSTON</p>
           <button type="button" className="text-sm" onClick={() => setPaletteOpen(true)}>
             ⌘K
           </button>
