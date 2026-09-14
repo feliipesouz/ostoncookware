@@ -9,7 +9,15 @@ export const metadata: Metadata = {
 
 export default function AdminRootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div data-theme="admin" className="min-h-screen bg-background text-foreground">
+    <div
+      data-theme="admin"
+      className="min-h-screen bg-background text-foreground"
+      style={{
+        fontFamily: 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+        letterSpacing: 0,
+        wordSpacing: 0,
+      }}
+    >
       {children}
     </div>
   );
