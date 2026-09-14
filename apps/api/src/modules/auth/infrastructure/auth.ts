@@ -21,7 +21,8 @@ function createAuth() {
       expiresIn: 60 * 60 * 24 * 7,
       updateAge: 60 * 60 * 24,
       cookieCache: {
-        enabled: false,
+        enabled: true,
+        maxAge: 60,
       },
     },
     user: {
@@ -41,6 +42,10 @@ function createAuth() {
       storage: "database",
       modelName: "rateLimit",
       customRules: {
+        "/get-session": {
+          window: 60,
+          max: 180,
+        },
         "/sign-in/email": {
           window: 60,
           max: 8,

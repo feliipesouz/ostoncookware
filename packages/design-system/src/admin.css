@@ -7,12 +7,14 @@
   --foreground-muted: #6f6a63;
   --border: #e6dfd3;
   --font-body: var(--font-manrope), var(--font-admin-stack), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-admin-stack);
   font-family: var(--font-manrope), var(--font-admin-stack), ui-sans-serif, system-ui, sans-serif;
-  letter-spacing: normal;
-  word-spacing: normal;
+  font-feature-settings: "liga" 0, "calt" 0;
+  letter-spacing: 0;
+  word-spacing: 0;
 }
 
-[data-theme="admin"] :where(button, input, select, textarea) {
-  letter-spacing: normal;
-  word-spacing: normal;
+[data-theme="admin"] :where(*):not([class*="tracking-"]) {
+  letter-spacing: 0 !important;
+  word-spacing: 0 !important;
 }

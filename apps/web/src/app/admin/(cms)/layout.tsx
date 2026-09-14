@@ -43,8 +43,11 @@ const navGroups: NavGroup[] = [
 
 async function getMe() {
   const response = await adminFetch("/v1/admin/me");
-  if (!response.ok) {
+  if (response.status === 401) {
     return null;
+  }
+  if (!response.ok) {
+    return { name: "", email: "", role: "EDITOR" };
   }
   return response.json() as Promise<{ name: string; email: string; role: string }>;
 }

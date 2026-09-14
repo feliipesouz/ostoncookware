@@ -8,31 +8,31 @@ function withPathname(request: NextRequest, pathname: string) {
   return NextResponse.next({ request: { headers: requestHeaders } });
 }
 
+function hasSessionCookie(request: NextRequest) {
+  return request.cookies
+    .getAll()
+    .some((cookie) => cookie.name.includes("better-auth") || cookie.name.includes("session_token"));
+}
+
+function adminContinue(request: NextRequest, pathname: string) {
+  const next = withPathname(request, pathname);
+  next.headers.set("Cache-Control", "no-store, private");
+  next.headers.set("X-Robots-Tag", "noindex, nofollow");
+  return next;
+}
+
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const api = apiOrigin(request);
 
   if (pathname.startsWith("/admin") && !pathname.startsWith("/admin/login")) {
-    const response = await fetch(`${api}/api/auth/get-session`, {
-      headers: {
-        cookie: request.headers.get("cookie") ?? "",
-      },
-      cache: "no-store",
-    });
-
-    if (!response.ok) {
+    if (!hasSessionCookie(request)) {
       return NextResponse.redirect(new URL("/admin/login", request.url));
     }
 
-    const session = (await response.json()) as { user?: unknown } | null;
-    if (!session?.user) {
-      return NextResponse.redirect(new URL("/admin/login", request.url));
-    }
-
-    const next = withPathname(request, pathname);
-    next.headers.set("Cache-Control", "no-store, private");
-    next.headers.set("X-Robots-Tag", "noindex, nofollow");
-    return next;
+    // Não chamar get-session aqui. O prefetch da navbar dispara dezenas de
+    // hits; 429 era tratado como logout e mandava o usuário ao login.
+    return adminContinue(request, pathname);
   }
 
   if (isSkippableRedirectPath(pathname)) {

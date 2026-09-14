@@ -105,6 +105,7 @@ export function AdminShell({
                 <Link
                   key={item.href}
                   href={item.href}
+                  prefetch={false}
                   title={item.label}
                   onClick={() => setMobileOpen(false)}
                   className={`rounded px-2 py-2 hover:bg-white/5 ${isActive(item.href) ? "bg-white/10" : ""} ${compact ? "text-center" : ""}`}
