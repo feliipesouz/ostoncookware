@@ -65,10 +65,11 @@ export async function updateHomepage(input: HomepageWrite) {
   }
 
   const saved = await prisma.$transaction(async (tx) => {
-    await tx.homepage.upsert({
-      where: { id: HOMEPAGE_ID },
-      create: { id: HOMEPAGE_ID, sections: defaultHomepageSections, version: 1 },
-      update: {},
+    // A no-op upsert can be emulated as read/create by Prisma and race on first save.
+    // Let PostgreSQL serialize competing inserts before applying the version check.
+    await tx.homepage.createMany({
+      data: [{ id: HOMEPAGE_ID, sections: defaultHomepageSections, version: 1 }],
+      skipDuplicates: true,
     });
     const updated = await tx.homepage.updateMany({
       where: { id: HOMEPAGE_ID, version: payload.expectedVersion },
