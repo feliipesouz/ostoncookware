@@ -64,7 +64,7 @@ export function AdminShell({
 
   const sidebar = (
     <aside
-      className={`flex h-full shrink-0 flex-col border-r border-white/10 bg-surface-inverse text-foreground-inverse ${
+      className={`flex h-full min-h-0 shrink-0 flex-col border-r border-white/10 bg-surface-inverse text-foreground-inverse ${
         compact ? "w-[4.5rem] p-3" : "w-64 p-6"
       }`}
     >
@@ -94,7 +94,7 @@ export function AdminShell({
       >
         {compact ? "⌘K" : "Buscar ou criar…  ⌘K"}
       </button>
-      <nav className="mt-8 grid flex-1 gap-6 overflow-y-auto text-sm">
+      <nav aria-label="Navegação administrativa" className="mt-8 grid min-h-0 flex-1 content-start gap-6 overflow-y-auto overscroll-contain text-sm">
         {visibleGroups.map((group) => (
           <div key={group.label}>
             {compact ? null : (
@@ -134,7 +134,7 @@ export function AdminShell({
 
   return (
     <div className="min-h-screen lg:flex">
-      <div className="hidden shrink-0 lg:block">{sidebar}</div>
+      <div className="sticky top-0 hidden h-dvh shrink-0 self-start lg:block">{sidebar}</div>
       {mobileOpen ? (
         <div className="fixed inset-0 z-40 lg:hidden">
           <div className="absolute inset-0 bg-ink/50" onClick={() => setMobileOpen(false)} />
