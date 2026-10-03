@@ -5,9 +5,16 @@ import {
   previewPathFromParams,
   resolvePreviewAccess,
   resolvePreviewDisablePath,
+  parseCampaignPreviewId,
 } from "@oston/contracts";
 
 describe("preview path security", () => {
+  it("allows only bounded opaque campaign IDs", () => {
+    expect(parseCampaignPreviewId("campaign-123_A")).toBe("campaign-123_A");
+    for (const value of [null, undefined, "", "../draft", "draft?admin=true", "x".repeat(65)]) {
+      expect(parseCampaignPreviewId(value)).toBeNull();
+    }
+  });
   it("rejects unauthenticated preview", () => {
     const result = resolvePreviewAccess(false, "/colecoes/aurora");
     expect(result).toEqual({ ok: false, status: 401, reason: "unauthenticated" });

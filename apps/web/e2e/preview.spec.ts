@@ -21,36 +21,64 @@ test.describe("preview editorial", () => {
 
   test("rascunho de coleção abre no preview e some do público até publicar", async ({ page }) => {
     const slug = `preview-e2e-${Date.now().toString(36)}`;
+    const name = `Coleção preview ${slug}`;
 
     await loginAsAdmin(page);
 
     await page.goto("/admin/colecoes/nova");
-    await page.getByTestId("collection-name").fill("Coleção preview E2E");
+    await page.getByTestId("collection-name").fill(name);
     await page.getByTestId("collection-slug").fill(slug);
     await page.getByTestId("collection-status").selectOption("DRAFT");
+    const creation = page.waitForResponse((response) =>
+      new URL(response.url()).pathname === "/v1/admin/collections" && response.request().method() === "POST",
+    );
     await page.getByTestId("save-draft").click();
-    await expect(page).toHaveURL(/\/admin\/colecoes\/.+/, { timeout: 20_000 });
+    const created = await creation;
+    expect(created.status()).toBe(201);
+    const { data: draft } = await created.json() as { data: { id: string; name: string; slug: string; status: string; version: number } };
+    expect(draft).toMatchObject({ name, slug, status: "DRAFT" });
+    const editPath = `/admin/colecoes/${draft.id}`;
+    const apiPath = `/v1/admin/collections/${draft.id}`;
+    await expect(page).toHaveURL((url) => url.pathname === editPath, { timeout: 20_000 });
+    await expect(page.getByTestId("collection-status")).toHaveValue("DRAFT");
 
-    const publicDraft = await page.request.get(`/colecoes/${slug}`);
-    expect(publicDraft.status()).toBeGreaterThanOrEqual(400);
+    const persistedDraft = await page.request.get(apiPath);
+    expect(persistedDraft.ok()).toBe(true);
+    expect((await persistedDraft.json()).data).toMatchObject({ id: draft.id, name, slug, status: "DRAFT" });
+    const publicDraft = await page.request.get(`/v1/public/collections/${slug}`);
+    expect(publicDraft.status()).toBe(404);
 
-    await page.goto("/admin/colecoes");
-    await page.getByRole("link", { name: /Coleção preview E2E/i }).click();
-    const preview = page.getByRole("link", { name: /preview/i });
+    await page.goto(`/admin/colecoes?q=${encodeURIComponent(slug)}`);
+    const row = page.getByRole("row").filter({ has: page.getByRole("cell", { name: slug, exact: true }) });
+    await row.getByRole("link", { name, exact: true }).click();
+    await expect(page).toHaveURL((url) => url.pathname === editPath, { timeout: 20_000 });
+    await expect(page.getByTestId("collection-slug")).toHaveValue(slug);
+    const preview = page.getByRole("link", { name: "Preview", exact: true });
     await expect(preview).toBeVisible();
+    const previewUrl = new URL((await preview.getAttribute("href"))!, page.url());
+    expect(previewUrl.searchParams.get("slug")).toBe(slug);
 
-    const [previewPage] = await Promise.all([page.context().waitForEvent("page"), preview.click()]);
-    await previewPage.waitForLoadState("domcontentloaded");
-    expect(previewPage.url()).toContain(`/colecoes/${slug}`);
-    await expect(previewPage.locator("h1")).toContainText(/preview/i, { timeout: 15_000 });
+    const [previewPage] = await Promise.all([page.waitForEvent("popup"), preview.click()]);
+    await expect(previewPage).toHaveURL((url) => url.pathname === `/colecoes/${slug}`, { timeout: 20_000 });
+    await expect(previewPage.getByRole("heading", { level: 1, name, exact: true })).toBeVisible({ timeout: 15_000 });
+    await previewPage.close();
 
     await page.getByTestId("collection-status").selectOption("PUBLISHED");
+    const publication = page.waitForResponse((response) =>
+      new URL(response.url()).pathname === apiPath && response.request().method() === "PUT",
+    );
     await page.getByTestId("publish").click();
-    await expect(page.getByText(/publicado|publicada/i)).toBeVisible({ timeout: 20_000 });
+    const publishedRecord = await publication;
+    expect(publishedRecord.ok()).toBe(true);
+    expect((await publishedRecord.json()).data).toMatchObject({ id: draft.id, status: "PUBLISHED", version: draft.version + 1 });
+    await expect(page.getByTestId("collection-status")).toHaveValue("PUBLISHED");
 
     await page.goto("/api/preview/disable");
+    const publicCollection = await page.request.get(`/v1/public/collections/${slug}`);
+    expect(publicCollection.ok()).toBe(true);
+    expect((await publicCollection.json()).data.collection).toMatchObject({ id: draft.id, name, slug });
     const published = await page.goto(`/colecoes/${slug}`);
     expect(published?.status()).toBeLessThan(400);
-    await expect(page.locator("h1")).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name, exact: true })).toBeVisible();
   });
 });

@@ -4,6 +4,8 @@ import {
   ALLOWED_IMAGE_MIME_TYPES,
   ALLOWED_VIDEO_MIME_TYPES,
   extensionForMime,
+  homepageMediaIds,
+  homepageSectionsSchema,
   mediaCompleteSchema,
   mediaListQuerySchema,
   mediaUpdateSchema,
@@ -17,6 +19,7 @@ import { loadEnv } from "../../../config/env.js";
 import { HttpError } from "../../../lib/errors.js";
 import { toPage } from "../../../lib/pagination.js";
 import { consumeThrottle } from "../../../lib/throttle.js";
+import { serverLog } from "../../../lib/logging.js";
 import { allowedFor, assertSafeBlobPath, assertUpload, isTrustedBlobUrl } from "./upload-rules.js";
 
 export { assertSafeBlobPath, assertUpload, isTrustedBlobUrl };
@@ -84,14 +87,14 @@ export async function updateMedia(id: string, input: unknown) {
 }
 
 type MediaUsageItem = {
-  type: "campaign" | "collection" | "product" | "settings";
+  type: "campaign" | "collection" | "product" | "settings" | "homepage";
   id: string;
   name: string;
   href: string;
 };
 
 export async function getMediaUsage(id: string): Promise<MediaUsageItem[]> {
-  const [campaigns, collections, products, settings] = await Promise.all([
+  const [campaigns, collections, products, settings, homepage] = await Promise.all([
     prisma.campaign.findMany({
       where: { OR: [{ desktopImageId: id }, { mobileImageId: id }, { videoId: id }] },
       select: { id: true, name: true },
@@ -118,9 +121,15 @@ export async function getMediaUsage(id: string): Promise<MediaUsageItem[]> {
       },
       select: { id: true, brandName: true },
     }),
+    prisma.homepage.findUnique({ where: { id: "default" }, select: { sections: true } }),
   ]);
+  const sections = homepageSectionsSchema.safeParse(homepage?.sections);
+  const homepageUsage: MediaUsageItem[] = sections.success && homepageMediaIds(sections.data).includes(id)
+    ? [{ type: "homepage", id: "default", name: "Homepage", href: "/admin/homepage" }]
+    : [];
 
   return [
+    ...homepageUsage,
     ...campaigns.map((item) => ({
       type: "campaign" as const,
       id: item.id,
@@ -158,6 +167,7 @@ export function mediaInUseMessage(usages: MediaUsageItem[]) {
     collection: usages.filter((item) => item.type === "collection"),
     campaign: usages.filter((item) => item.type === "campaign"),
     settings: usages.filter((item) => item.type === "settings"),
+    homepage: usages.filter((item) => item.type === "homepage"),
   };
 
   const parts: string[] = [];
@@ -181,6 +191,9 @@ export function mediaInUseMessage(usages: MediaUsageItem[]) {
   }
   if (byType.settings.length > 0) {
     parts.push("configurações do site");
+  }
+  if (byType.homepage.length > 0) {
+    parts.push("homepage");
   }
 
   return `Essa imagem ainda está sendo usada em ${parts.join(" e ")}.`;
@@ -256,7 +269,7 @@ export async function deleteMedia(id: string) {
     try {
       await del(media.url, { token: env.BLOB_READ_WRITE_TOKEN });
     } catch (error) {
-      console.error("Falha ao remover blob após exclusão do registro", media.id, error);
+      serverLog("warn", "media.blob.delete.failed", { error });
     }
   }
 }

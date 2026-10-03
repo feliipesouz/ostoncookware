@@ -1,6 +1,7 @@
 import { randomUUID, timingSafeEqual } from "node:crypto";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { ZodError } from "zod";
+import { serverLog } from "./logging.js";
 
 export class HttpError extends Error {
   readonly status: number;
@@ -44,6 +45,7 @@ export function sendProblem(
   const instance = request.url.split("?")[0] ?? request.url;
   const correlationId = request.id ?? randomUUID();
   reply.header("x-request-id", correlationId);
+  reply.header("Cache-Control", "no-store, private");
 
   if (error instanceof ZodError) {
     return reply.status(400).send({
@@ -63,15 +65,21 @@ export function sendProblem(
 
   if (error instanceof HttpError) {
     const meta = error.meta ?? {};
+    if (error.status === 429 && typeof meta.retryAfterSeconds === "number") {
+      reply.header("Retry-After", String(Math.max(1, Math.ceil(meta.retryAfterSeconds))));
+    }
+    if (!error.expose) {
+      serverLog("error", "http.request.failed", { correlationId, statusCode: error.status, error });
+    }
     return reply.status(error.status).send({
       type: error.type,
-      title: error.message,
+      title: error.expose ? error.message : "Serviço temporariamente indisponível.",
       status: error.status,
       code: error.code,
       instance,
       correlationId,
-      ...(error.detail ? { detail: error.detail } : {}),
-      ...(error.meta ? { meta: error.meta } : {}),
+      ...(error.expose && error.detail ? { detail: error.detail } : {}),
+      ...(error.expose && error.meta ? { meta: error.meta } : {}),
       ...(error.code === "VERSION_CONFLICT"
         ? {
             updatedByName: typeof meta.updatedBy === "string" ? meta.updatedBy : null,
@@ -79,6 +87,26 @@ export function sendProblem(
             currentVersion: typeof meta.currentVersion === "number" ? meta.currentVersion : null,
           }
         : {}),
+    });
+  }
+
+  // Preserve parser/body-limit/rate-limit failures as client errors, without
+  // returning the parser's original message (which can quote request content).
+  if (error instanceof Error && "statusCode" in error &&
+      typeof error.statusCode === "number" && [400, 413, 415, 429].includes(error.statusCode)) {
+    const titles: Record<number, string> = {
+      400: "Solicitação inválida.",
+      413: "Solicitação muito grande.",
+      415: "Formato de solicitação não suportado.",
+      429: "Muitas tentativas. Aguarde e tente novamente.",
+    };
+    return reply.status(error.statusCode).send({
+      type: "https://ostoncookware.com/problems/request",
+      title: titles[error.statusCode],
+      status: error.statusCode,
+      code: error.statusCode === 429 ? "RATE_LIMITED" : "INVALID_REQUEST",
+      instance,
+      correlationId,
     });
   }
 
@@ -115,7 +143,7 @@ export function sendProblem(
     }
   }
 
-  request.log.error({ err: error, correlationId }, "Unhandled error");
+  serverLog("error", "http.request.failed", { correlationId, statusCode: 500, error });
 
   return reply.status(500).send({
     type: "https://ostoncookware.com/problems/internal",

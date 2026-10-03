@@ -6,7 +6,8 @@
   "exports": {
     "./app": "./src/app.ts",
     "./auth": "./src/modules/auth/infrastructure/auth.ts",
-    "./handler": "./src/http-adapter.ts"
+    "./handler": "./src/http-adapter.ts",
+    "./runtime": "./src/lib/runtime.ts"
   },
   "scripts": {
     "dev": "tsx watch src/index.ts",

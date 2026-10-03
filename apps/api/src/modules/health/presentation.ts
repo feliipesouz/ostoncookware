@@ -5,9 +5,13 @@ import { sendProblem } from "../../lib/errors.js";
 import { noStore, requireUser } from "../../lib/http.js";
 
 export async function registerHealth(app: FastifyInstance) {
-  app.get("/health", async () => ({ status: "ok" }));
+  app.get("/health", async (_request, reply) => {
+    noStore(reply);
+    return { status: "ok" };
+  });
 
   app.get("/ready", async (_request, reply) => {
+    noStore(reply);
     try {
       await prisma.$queryRaw`SELECT 1`;
       return { status: "ready" };

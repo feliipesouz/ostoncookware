@@ -11,6 +11,7 @@
     "migrate": "prisma migrate dev",
     "migrate:deploy": "prisma migrate deploy",
     "seed": "tsx src/seed.ts",
+    "catalog": "tsx src/seed-catalog.ts",
     "typecheck": "tsc --noEmit",
     "lint": "echo 'no lint config for database'"
   },

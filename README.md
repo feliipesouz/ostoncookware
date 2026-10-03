@@ -30,7 +30,7 @@ Na Vercel isso é **um projeto só**. Localmente o Fastify ainda pode subir em `
 
 ## Requisitos
 
-- Node.js 20+
+- Node.js 20.19+, 22.12+ ou 24+ (faixas suportadas pelo Prisma 7)
 - pnpm 10
 - PostgreSQL 16+ (Docker local ou Neon)
 
@@ -68,6 +68,8 @@ pnpm admin:create
 
 O seed cria conteúdo **DEMO**. Não é catálogo oficial. Em production o seed recusa, a menos que `ALLOW_DEMO_SEED=true`.
 
+Para os seis conjuntos oficiais recebidos, use `pnpm db:catalog` (rascunhos) ou `pnpm db:catalog --publish` (novos registros publicados). O importador preserva conteúdo existente. Veja [experiência premium e operação do catálogo](docs/premium-experience.md) para origem das imagens, comportamento da importação e campanhas sazonais.
+
 `pnpm admin:create` é idempotente de forma segura: se já existir um OWNER, falha. Não promove usuário existente.
 
 ## Desenvolvimento
@@ -95,7 +97,9 @@ pnpm test:e2e
 
 - Login: Better Auth com `storage: "database"` (tabela `rateLimit`). Não depende de instância serverless.
 - Leads e autorização de upload: tabela `throttle` no PostgreSQL.
+- Contadores usam um `INSERT ... ON CONFLICT` atômico e o relógio do banco; pedidos concorrentes compartilham a mesma janela. Respostas `429` incluem `Retry-After`.
 - `@fastify/rate-limit` em memória é **camada adicional**, não a proteção principal.
+- Apenas o runtime Vercel confia em `X-Forwarded-For`, sobrescrito pela plataforma. A API isolada usa o endereço da conexão.
 
 ## Deploy na Vercel
 
@@ -152,4 +156,10 @@ Fluxo: sessão → `POST /v1/admin/media/upload` (`handleUpload`) → upload no 
 
 ## Observabilidade
 
-Logs Pino com redaction de cookie, authorization, password, tokens, `DATABASE_URL` e Blob token. Respostas de erro de production levam `correlationId`, sem stack.
+Localmente, Pino remove dados sensíveis e usa o padrão da rota, sem parâmetros de query. Na Vercel, eventos JSON de conclusão e falha funcionam sem transport workers. Logs de erro registram tipo/código e correlação; não incluem mensagens, stack, corpos ou cookies que possam conter dados pessoais e segredos.
+
+Falhas inesperadas retornam uma mensagem genérica e `correlationId`; erros de validação preservam campos e códigos úteis. Autenticação, saúde e falhas usam `no-store`. `/health` verifica o processo; `/ready` verifica o banco. Diagnóstico detalhado fica em `/v1/admin/system`, com autenticação e permissão `system:read`; não existe `/api/diag` público.
+
+Invalidação de cache tem timeout de 5 segundos por origin e registra HTTP não-2xx. Uma falha de invalidação não desfaz a edição já persistida; o ISR público continua com renovação de 60 segundos. Verifique os eventos `cache.revalidation.*` quando a publicação demorar a aparecer.
+
+A CI usa pnpm 10.5.2, PostgreSQL 16 e testes reais de concorrência com `RUN_API_INTEGRATION=true`. Execute esses testes somente contra um banco descartável. O install da Vercel exige o lockfile versionado.

@@ -4,7 +4,7 @@ import { adminGet } from "@/lib/admin";
 
 export default async function ProductHistoryPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const { data } = await adminGet<{ data: { name?: string } }>(`/v1/admin/products/${id}`);
+  const { data } = await adminGet<{ data: { name?: string; version: number } }>(`/v1/admin/products/${id}`);
   const name = String(data.name ?? "Produto");
 
   return (
@@ -22,7 +22,7 @@ export default async function ProductHistoryPage({ params }: { params: Promise<{
         entityLabel="produto"
         entityName={name}
         versionsPath={`/v1/admin/products/${id}/revisions`}
-        restorePath={(version) => `/v1/admin/products/${id}/revisions/${version.id ?? version.version}/restore`}
+        currentVersion={data.version}
       />
     </div>
   );

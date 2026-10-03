@@ -4,7 +4,7 @@ import { adminGet } from "@/lib/admin";
 
 export default async function CollectionHistoryPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const { data } = await adminGet<{ data: { name?: string } }>(`/v1/admin/collections/${id}`);
+  const { data } = await adminGet<{ data: { name?: string; version: number } }>(`/v1/admin/collections/${id}`);
   const name = String(data.name ?? "Coleção");
 
   return (
@@ -21,7 +21,7 @@ export default async function CollectionHistoryPage({ params }: { params: Promis
         entityLabel="coleção"
         entityName={name}
         versionsPath={`/v1/admin/collections/${id}/revisions`}
-        restorePath={(version) => `/v1/admin/collections/${id}/revisions/${version.id ?? version.version}/restore`}
+        currentVersion={data.version}
       />
     </div>
   );

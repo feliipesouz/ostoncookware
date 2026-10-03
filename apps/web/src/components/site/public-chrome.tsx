@@ -17,11 +17,18 @@ export function PublicChrome({
   children: React.ReactNode;
 }) {
   return (
-    <>
+    <div className="public-site" id="top">
+      <a className="skip-link" href="#main-content">
+        Ir para o conteúdo
+      </a>
       <AnnouncementBar announcement={announcement ?? null} />
-      <SiteHeader settings={settings} items={navigation?.header} overlay={overlay} />
-      {children}
+      <div className="public-frame">
+        <SiteHeader settings={settings} items={navigation?.header} overlay={overlay} />
+        <div id="main-content" tabIndex={-1} className="public-content">
+          {children}
+        </div>
+      </div>
       <SiteFooter settings={settings} items={navigation?.footer} />
-    </>
+    </div>
   );
 }

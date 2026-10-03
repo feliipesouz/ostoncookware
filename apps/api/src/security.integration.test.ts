@@ -45,6 +45,27 @@ describe.skipIf(!enabled)("API authorization", () => {
       url: "/v1/admin/system",
     });
     expect(system.statusCode).toBe(401);
+
+    for (const url of [
+      "/v1/admin/preview/campaigns/campaign_1",
+      "/v1/admin/preview/site?campaignId=campaign_1",
+    ]) {
+      const preview = await app.inject({ method: "GET", url });
+      expect(preview.statusCode).toBe(401);
+    }
+  });
+
+  it("keeps liveness generic and does not reflect a client request id", async () => {
+    const { buildApp } = await import("./app.js");
+    app ??= await buildApp();
+    const response = await app.inject({
+      method: "GET", url: "/health", headers: { "x-request-id": "untrusted-client-id" },
+    });
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({ status: "ok" });
+    expect(response.headers["cache-control"]).toContain("no-store");
+    expect(response.headers["x-request-id"]).toMatch(/^[a-f0-9-]{36}$/);
+    expect(response.headers["x-request-id"]).not.toBe("untrusted-client-id");
   });
 
   it("rejects public lead mass assignment and accepts a valid lead", async () => {

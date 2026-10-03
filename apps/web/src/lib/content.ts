@@ -1,7 +1,8 @@
 import { defaultFooterNavigation, defaultHeaderNavigation, defaultHomepageSections } from "@/lib/cms-defaults";
-import type { HomepageSection } from "@oston/contracts";
+import type { HomepageSection, ProductDetails } from "@oston/contracts";
 import type { NavigationItem } from "@oston/contracts";
-import { draftMode } from "next/headers";
+import { cookies, draftMode } from "next/headers";
+import { CAMPAIGN_PREVIEW_COOKIE, parseCampaignPreviewId } from "@/lib/preview";
 
 export type Media = {
   id: string;
@@ -42,6 +43,11 @@ export type Collection = {
   isDemo: boolean;
   seoTitle: string | null;
   seoDescription: string | null;
+  priceFrom?: string | null;
+  canonicalPath?: string | null;
+  ogImage?: Media | null;
+  updatedAt?: string;
+  status?: string;
 };
 
 export type Product = {
@@ -62,6 +68,14 @@ export type Product = {
   isDemo: boolean;
   seoTitle: string | null;
   seoDescription: string | null;
+  sku?: string | null;
+  price?: string | null;
+  details?: ProductDetails;
+  variants?: { id: string; name: string; sku: string | null; attributes: Record<string, unknown>; price: string | null; availability: string; status: string }[];
+  canonicalPath?: string | null;
+  ogImage?: Media | null;
+  updatedAt?: string;
+  status?: string;
 };
 
 export type Settings = {
@@ -106,7 +120,11 @@ export type InstitutionalPage = {
   seoDescription: string | null;
 };
 
-export type PublicHomepageSection = HomepageSection & { image?: Media | null };
+export type PublicHomepageSection = HomepageSection & {
+  image?: Media | null;
+  desktopImage?: Media | null;
+  mobileImage?: Media | null;
+};
 
 export type PublicSite = {
   settings: Settings;
@@ -147,10 +165,15 @@ async function loadPublicGet() {
 
 export async function getPublicSite() {
   if (await isDraftEnabled()) {
+    const rawCampaignId = (await cookies()).get(CAMPAIGN_PREVIEW_COOKIE)?.value;
+    const campaignId = parseCampaignPreviewId(rawCampaignId);
+    if (rawCampaignId && !campaignId) return { ...fallbackSite(), campaign: null };
     try {
-      const payload = await previewGet<{ data: PublicSite }>("/v1/admin/preview/site");
+      const path = campaignId ? `/v1/admin/preview/site?campaignId=${encodeURIComponent(campaignId)}` : "/v1/admin/preview/site";
+      const payload = await previewGet<{ data: PublicSite }>(path);
       return payload.data;
     } catch {
+      if (campaignId) return { ...fallbackSite(), campaign: null };
       const publicGet = await loadPublicGet();
       const payload = await publicGet<{ data: PublicSite }>(
         "/v1/public/site",
@@ -175,7 +198,7 @@ export function fallbackSettings(): Settings {
     whatsapp: null,
     whatsappMessage: null,
     phone: null,
-    email: "contato@ostoncookware.com",
+    email: null,
     instagram: null,
     facebook: null,
     youtube: null,
@@ -185,7 +208,7 @@ export function fallbackSettings(): Settings {
     defaultSeoTitle: "OSTON Cookware",
     defaultSeoDescription: "Cozinhando com qualidade e estilo.",
     defaultOgImage: null,
-    footerText: "Cookware contemporâneo, atendimento consultivo e uma presença digital pensada para durar.",
+    footerText: "Para quem encontra na cozinha um jeito de estar presente. Conheça as coleções e o universo OSTON.",
     copyrightText: "OSTON Cookware.",
     favicon: null,
     catalogPdf: null,
@@ -198,33 +221,33 @@ export function fallbackSettings(): Settings {
 export function fallbackCampaign(): Campaign {
   return {
     id: "fallback",
-    eyebrow: "OSTON Cookware",
-    title: "Cozinhando com qualidade e estilo",
+    eyebrow: "OSTON · Cookware",
+    title: "O extraordinário começa à mesa.",
     subtitle:
-      "Uma marca brasileira de cookware contemporâneo. Campanha, embaixador e coleções são gerenciados no CMS.",
+      "Conheça as coleções OSTON e encontre as peças que fazem parte do seu jeito de cozinhar.",
     desktopImage: {
       id: "d",
-      url: "/demo/hero-desktop.png",
-      alt: "Hero DEMO",
-      width: 2400,
-      height: 1500,
+      url: "/catalogo/oston-os23-eucalipto.webp",
+      alt: "Conjunto OSTON Eucalipto em exposição na cozinha",
+      width: 900,
+      height: 1600,
     },
     mobileImage: {
       id: "m",
-      url: "/demo/hero-mobile.png",
-      alt: "Hero DEMO mobile",
-      width: 1200,
-      height: 1800,
+      url: "/catalogo/oston-os23-eucalipto.webp",
+      alt: "Conjunto OSTON Eucalipto em exposição na cozinha",
+      width: 900,
+      height: 1600,
     },
     video: null,
-    imageAlt: "Campanha inicial OSTON",
-    primaryCtaLabel: "Conhecer coleções",
+    imageAlt: "Conjunto OSTON Eucalipto em exposição na cozinha",
+    primaryCtaLabel: "Explorar coleções",
     primaryCtaUrl: "/colecoes",
-    secondaryCtaLabel: "Falar com consultor",
-    secondaryCtaUrl: "/contato",
+    secondaryCtaLabel: "Conheça a OSTON",
+    secondaryCtaUrl: "/a-marca",
     textAlign: "left",
     focalPosition: "center",
-    overlay: 46,
+    overlay: 24,
     collectionId: null,
   };
 }
@@ -232,7 +255,7 @@ export function fallbackCampaign(): Campaign {
 export function fallbackSite(): PublicSite {
   return {
     settings: fallbackSettings(),
-    campaign: fallbackCampaign(),
+    campaign: null,
     collections: [],
     homepage: { sections: defaultHomepageSections, version: 1 },
     navigation: { header: defaultHeaderNavigation, footer: defaultFooterNavigation },

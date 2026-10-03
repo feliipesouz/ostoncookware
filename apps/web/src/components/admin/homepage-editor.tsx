@@ -1,19 +1,22 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { HomepageSection } from "@oston/contracts";
+import { withInstitutionalHero, type HomepageSection } from "@oston/contracts";
 import { adminMutate, conflictActor, conflictAt, isVersionConflict } from "@/lib/admin-client";
 import { PreviewButton } from "./preview-button";
 import { ReorderControls, moveItem } from "./reorder-list";
 import { ConflictBanner } from "./ui/conflict-banner";
 import { useSaveHotkey, useUnsavedChanges } from "./use-unsaved-changes";
+import { MediaPicker } from "./media-picker";
 
 type Media = { id: string; url: string; originalFilename?: string; alt: string | null };
 type CampaignOption = { id: string; name: string; status: string };
 
 const TYPE_LABEL: Record<string, string> = {
-  HERO: "Hero / campanha",
-  hero_campaign: "Hero / campanha",
+  BRAND_HERO: "Hero institucional da marca",
+  SEASONAL_CAMPAIGN: "Campanha sazonal",
+  HERO: "Campanha sazonal",
+  hero_campaign: "Campanha sazonal",
   BRAND_MANIFESTO: "Manifesto",
   manifesto: "Manifesto",
   FEATURED_COLLECTIONS: "Coleções em destaque",
@@ -33,9 +36,9 @@ export function HomepageEditor({
 }: {
   initial: { sections: HomepageSection[]; version: number };
 }) {
-  const [sections, setSections] = useState(initial.sections);
+  const [sections, setSections] = useState(() => withInstitutionalHero(initial.sections));
   const [version, setVersion] = useState(initial.version);
-  const [baseline, setBaseline] = useState(() => JSON.stringify(initial.sections));
+  const [baseline, setBaseline] = useState(() => JSON.stringify(withInstitutionalHero(initial.sections)));
   const [media, setMedia] = useState<Media[]>([]);
   const [campaigns, setCampaigns] = useState<CampaignOption[]>([]);
   const [message, setMessage] = useState("");
@@ -47,12 +50,25 @@ export function HomepageEditor({
   useUnsavedChanges(dirty);
 
   useEffect(() => {
-    fetch("/v1/admin/media?pageSize=50", { credentials: "include" })
-      .then((res) => res.json())
-      .then((payload) => setMedia(payload.data ?? []));
-    fetch("/v1/admin/campaigns?pageSize=50", { credentials: "include" })
-      .then((res) => res.json())
-      .then((payload) => setCampaigns(payload.data ?? []));
+    const controller = new AbortController();
+    async function loadOptions() {
+      try {
+        const responses = await Promise.all([
+          fetch("/v1/admin/media?pageSize=50", { credentials: "include", signal: controller.signal }),
+          fetch("/v1/admin/campaigns?pageSize=50", { credentials: "include", signal: controller.signal }),
+        ]);
+        if (responses.some((response) => !response.ok)) throw new Error("Não foi possível carregar as opções de mídia e campanha.");
+        const [mediaPayload, campaignPayload] = await Promise.all(responses.map((response) => response.json()));
+        if (!controller.signal.aborted) {
+          setMedia(mediaPayload.data ?? []);
+          setCampaigns(campaignPayload.data ?? []);
+        }
+      } catch (error) {
+        if (!controller.signal.aborted) setError(error instanceof Error ? error.message : "Não foi possível carregar as opções.");
+      }
+    }
+    void loadOptions();
+    return () => controller.abort();
   }, []);
 
   function update(index: number, next: HomepageSection) {
@@ -74,7 +90,7 @@ export function HomepageEditor({
       setSections(payload.data.sections);
       setVersion(payload.data.version);
       setBaseline(JSON.stringify(payload.data.sections));
-      setMessage("Homepage salva.");
+      setMessage("Homepage publicada. A atualização do site pode levar até um minuto.");
     } catch (err) {
       if (isVersionConflict(err)) {
         setConflict({ actorName: conflictActor(err), updatedAt: conflictAt(err) });
@@ -98,7 +114,7 @@ export function HomepageEditor({
   return (
     <form onSubmit={onSubmit} className="grid max-w-4xl gap-6">
       <p className="text-sm text-foreground-muted">
-        Seções fixas da homepage. Ative, reordene e edite o texto — sem HTML livre.
+        A identidade da marca e as campanhas são independentes. Salvar publica as alterações; o preview mostra a última versão salva.
       </p>
       <ol className="grid gap-4">
         {sections.map((section, index) => (
@@ -155,7 +171,7 @@ export function HomepageEditor({
       {message ? <p className="text-sm text-success">{message}</p> : null}
       <div className="flex flex-wrap gap-3">
         <button type="submit" disabled={saving || !dirty} className="bg-foreground px-5 py-2 text-foreground-inverse">
-          {saving ? "Salvando…" : "Salvar homepage"}
+          {saving ? "Publicando…" : "Salvar e publicar homepage"}
         </button>
         <PreviewButton type="home" path="/" />
       </div>
@@ -174,16 +190,71 @@ function SectionFields({
   campaigns: CampaignOption[];
   onChange: (section: HomepageSection) => void;
 }) {
-  if (section.type === "HERO") {
+  const [heroImage, setHeroImage] = useState<"desktopImageId" | "mobileImageId" | null>(null);
+
+  if (section.type === "BRAND_HERO") {
     return (
-      <label className="mt-4 grid gap-1 text-sm">
-        Campanha
+      <div className="mt-4 grid gap-4">
+        <p className="text-sm text-foreground-muted">Conteúdo permanente da marca. Campanhas sazonais não alteram esta apresentação.</p>
+        <Field label="Texto de abertura" value={section.eyebrow} onChange={(value) => onChange({ ...section, eyebrow: value })} />
+        <Field label="Título principal" value={section.title} onChange={(value) => onChange({ ...section, title: value })} />
+        <Area label="Apresentação" value={section.subtitle} onChange={(value) => onChange({ ...section, subtitle: value })} />
+        <div className="grid gap-3 sm:grid-cols-2">
+          {(["desktopImageId", "mobileImageId"] as const).map((key) => (
+            <div key={key} className="grid gap-2 border border-border p-3 text-sm">
+              <p>{key === "desktopImageId" ? "Imagem desktop" : "Imagem mobile"}</p>
+              <p className="truncate text-foreground-muted">{section[key] ? media.find((item) => item.id === section[key])?.originalFilename ?? "Imagem selecionada" : "Imagem editorial padrão"}</p>
+              <div className="flex gap-3">
+                <button type="button" className="underline" onClick={() => setHeroImage(key)}>Escolher imagem</button>
+                {section[key] ? <button type="button" className="underline" onClick={() => onChange({ ...section, [key]: null })}>Usar padrão</button> : null}
+              </div>
+            </div>
+          ))}
+        </div>
+        <MediaPicker
+          open={heroImage !== null}
+          multiple={false}
+          selectedIds={heroImage && section[heroImage] ? [section[heroImage]] : []}
+          onClose={() => setHeroImage(null)}
+          onSelect={(items) => { if (heroImage && items[0]) onChange({ ...section, [heroImage]: items[0].id }); }}
+        />
+        <Field label="Descrição acessível da imagem" value={section.imageAlt} onChange={(value) => onChange({ ...section, imageAlt: value })} />
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Field label="Chamada principal" value={section.primaryCtaLabel} onChange={(value) => onChange({ ...section, primaryCtaLabel: value })} />
+          <Field label="Destino principal" value={section.primaryCtaUrl} onChange={(value) => onChange({ ...section, primaryCtaUrl: value })} />
+          <Field label="Chamada secundária" value={section.secondaryCtaLabel ?? ""} onChange={(value) => onChange({ ...section, secondaryCtaLabel: value || undefined })} />
+          <Field label="Destino secundário" value={section.secondaryCtaUrl ?? ""} onChange={(value) => onChange({ ...section, secondaryCtaUrl: value || undefined })} />
+        </div>
+        <div className="grid gap-3 sm:grid-cols-3">
+          <label className="grid gap-1 text-sm">Alinhamento
+            <select className="border border-border px-3 py-2" value={section.textAlign} onChange={(event) => onChange({ ...section, textAlign: event.target.value as "left" | "center" | "right" })}>
+              <option value="left">Esquerda</option><option value="center">Centro</option><option value="right">Direita</option>
+            </select>
+          </label>
+          <label className="grid gap-1 text-sm">Ponto focal
+            <select className="border border-border px-3 py-2" value={section.focalPosition} onChange={(event) => onChange({ ...section, focalPosition: event.target.value as typeof section.focalPosition })}>
+              {["center", "top", "bottom", "left", "right", "top-left", "top-right", "bottom-left", "bottom-right"].map((value) => <option key={value}>{value}</option>)}
+            </select>
+          </label>
+          <label className="grid gap-1 text-sm">Escurecimento (0–80)
+            <input type="number" min={0} max={80} className="border border-border px-3 py-2" value={section.overlay} onChange={(event) => onChange({ ...section, overlay: Number(event.target.value) })} />
+          </label>
+        </div>
+      </div>
+    );
+  }
+
+  if (section.type === "HERO" || section.type === "SEASONAL_CAMPAIGN") {
+    return (
+      <div className="mt-4 grid gap-3 text-sm">
+      <label className="grid gap-1">
+        Campanha exibida abaixo da marca
         <select
           className="border border-border px-3 py-2"
           value={section.campaignId ?? ""}
           onChange={(event) => onChange({ ...section, campaignId: event.target.value || null })}
         >
-          <option value="">Campanha ativa automaticamente</option>
+          <option value="">Automática: menor ordem entre campanhas vigentes</option>
           {campaigns.map((campaign) => (
             <option key={campaign.id} value={campaign.id}>
               {campaign.name} ({campaign.status})
@@ -191,11 +262,13 @@ function SectionFields({
           ))}
         </select>
       </label>
+      <p className="text-foreground-muted">A seleção manual respeita publicação e datas. Se estiver em rascunho, expirada ou na lixeira, o espaço fica oculto. Em modo automático, vence a menor ordem; empates usam a atualização mais recente.</p>
+      </div>
     );
   }
 
   if (section.type === "hero_campaign") {
-    return <p className="mt-4 text-sm text-foreground-muted">Usa a campanha ativa do CMS.</p>;
+    return <p className="mt-4 text-sm text-foreground-muted">Exibe a campanha vigente de menor ordem abaixo da marca. Sem campanha vigente, o espaço fica oculto. Edite datas, imagens e chamadas em Campanhas.</p>;
   }
 
   if (section.type === "BRAND_MANIFESTO") {

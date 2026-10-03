@@ -1,18 +1,16 @@
 import { getAuth } from "@oston/api/auth";
-import { publicRuntimeError } from "@/lib/runtime-error";
+import { unavailableResponse } from "@oston/api/runtime";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 async function handleAuth(request: Request) {
   try {
-    return await getAuth().handler(request);
+    const response = await getAuth().handler(request);
+    response.headers.set("Cache-Control", "no-store, private");
+    return response;
   } catch (error) {
-    console.error("[oston-auth]", error);
-    return Response.json(
-      { status: "error", runtime: "auth", message: publicRuntimeError(error) },
-      { status: 503 },
-    );
+    return unavailableResponse(error, "auth");
   }
 }
 

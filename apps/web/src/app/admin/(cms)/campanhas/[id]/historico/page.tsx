@@ -4,7 +4,7 @@ import { adminGet } from "@/lib/admin";
 
 export default async function CampaignHistoryPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const { data } = await adminGet<{ data: { name?: string } }>(`/v1/admin/campaigns/${id}`);
+  const { data } = await adminGet<{ data: { name?: string; version: number } }>(`/v1/admin/campaigns/${id}`);
   const name = String(data.name ?? "Campanha");
 
   return (
@@ -21,7 +21,7 @@ export default async function CampaignHistoryPage({ params }: { params: Promise<
         entityLabel="campanha"
         entityName={name}
         versionsPath={`/v1/admin/campaigns/${id}/revisions`}
-        restorePath={(version) => `/v1/admin/campaigns/${id}/revisions/${version.id ?? version.version}/restore`}
+        currentVersion={data.version}
       />
     </div>
   );

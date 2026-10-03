@@ -1,16 +1,15 @@
 import type { MetadataRoute } from "next";
+import { absoluteUrl, isIndexingAllowed, siteUrl } from "@/lib/seo";
 
 export default function robots(): MetadataRoute.Robots {
-  const site = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  if (!isIndexingAllowed()) return { rules: [{ userAgent: "*", disallow: "/" }] };
   return {
-    rules: [
-      {
-        userAgent: "*",
-        allow: "/",
-        disallow: ["/admin", "/admin/", "/api/", "/v1/"],
-      },
-    ],
-    sitemap: `${site}/sitemap.xml`,
-    host: site,
+    rules: [{
+      userAgent: "*",
+      allow: "/",
+      disallow: ["/admin", "/api/", "/v1/", "/health", "/ready"],
+    }],
+    sitemap: absoluteUrl("/sitemap.xml"),
+    host: siteUrl(),
   };
 }

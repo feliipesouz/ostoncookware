@@ -1,4 +1,8 @@
-export type PreviewType = "product" | "collection" | "campaign" | "page" | "home";
+import type { PreviewType } from "@oston/contracts";
+export type { PreviewType } from "@oston/contracts";
+export { parseCampaignPreviewId } from "@oston/contracts";
+
+export const CAMPAIGN_PREVIEW_COOKIE = "oston_campaign_preview";
 
 const PREVIEW_PATHS = [
   /^\/$/,

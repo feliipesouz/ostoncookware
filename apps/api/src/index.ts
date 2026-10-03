@@ -1,5 +1,6 @@
 import { getApp } from "./app.js";
 import { loadEnv } from "./config/env.js";
+import { serverLog } from "./lib/logging.js";
 
 async function start() {
   const env = loadEnv();
@@ -12,6 +13,6 @@ async function start() {
 }
 
 start().catch((error) => {
-  console.error(error);
+  serverLog("error", "api.start.failed", { error });
   process.exit(1);
 });

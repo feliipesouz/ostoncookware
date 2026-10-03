@@ -16,6 +16,8 @@ const scriptSrc = [
 
 const connectSrc = [
   "'self'",
+  // @vercel/blob/client 2.x uploads to this API, not the public image URL.
+  "https://vercel.com/api/blob/",
   "https://va.vercel-scripts.com",
   "https://vitals.vercel-insights.com",
   ...(!isProd ? ["ws:", "wss:"] : []),
@@ -26,6 +28,7 @@ const csp = [
   `script-src ${scriptSrc}`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https://*.public.blob.vercel-storage.com https://*.blob.vercel-storage.com",
+  "media-src 'self' blob: https://*.public.blob.vercel-storage.com https://*.blob.vercel-storage.com",
   "font-src 'self'",
   `connect-src ${connectSrc}`,
   "frame-ancestors 'none'",
@@ -37,9 +40,9 @@ const csp = [
 
 const nextConfig: NextConfig = {
   outputFileTracingRoot: monorepoRoot,
-  transpilePackages: ["@oston/api", "@oston/contracts", "@oston/database", "@oston/design-system"],
-  // pg e o adapter entram no bundle webpack. Se forem external, o build
-  // encontra node_modules e o runtime da Vercel não.
+  // Next keeps pg external by default even with serverExternalPackages: [].
+  // Explicit transpilation makes it part of the same monorepo server bundle.
+  transpilePackages: ["@oston/api", "@oston/contracts", "@oston/database", "@oston/design-system", "pg"],
   serverExternalPackages: [],
   webpack: (config) => {
     config.resolve.extensionAlias = {

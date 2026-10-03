@@ -1,35 +1,26 @@
 import { prisma } from "@oston/database";
 import {
   defaultHomepageSections,
+  homepageMediaIds,
   homepageSectionsSchema,
   homepageWriteSchema,
+  withInstitutionalHero,
   type HomepageSection,
   type HomepageWrite,
 } from "@oston/contracts";
 import { HttpError } from "../../../lib/errors.js";
 import { toMediaSummary } from "../../../lib/media.js";
+import { versionConflictError } from "../../../lib/occ.js";
 
 const HOMEPAGE_ID = "default";
 
 function parseSections(value: unknown): HomepageSection[] {
   const parsed = homepageSectionsSchema.safeParse(value);
-  return parsed.success ? parsed.data : defaultHomepageSections;
-}
-
-function sectionImageId(section: HomepageSection) {
-  if (
-    section.type === "EDITORIAL_FEATURE" ||
-    section.type === "AMBASSADOR" ||
-    section.type === "experience" ||
-    section.type === "ambassador"
-  ) {
-    return "imageId" in section && typeof section.imageId === "string" ? section.imageId : null;
-  }
-  return null;
+  return withInstitutionalHero(parsed.success ? parsed.data : defaultHomepageSections);
 }
 
 async function hydrateSections(sections: HomepageSection[]) {
-  const imageIds = sections.map(sectionImageId).filter((id): id is string => Boolean(id));
+  const imageIds = homepageMediaIds(sections);
   const media =
     imageIds.length > 0
       ? await prisma.mediaAsset.findMany({ where: { id: { in: imageIds } } })
@@ -37,19 +28,22 @@ async function hydrateSections(sections: HomepageSection[]) {
   const byId = new Map(media.map((item) => [item.id, toMediaSummary(item)]));
 
   return sections.map((section) => {
-    const imageId = sectionImageId(section);
-    if (!imageId) return section;
-    return { ...section, image: byId.get(imageId) ?? null };
+    if (section.type === "BRAND_HERO") {
+      return {
+        ...section,
+        desktopImage: section.desktopImageId ? byId.get(section.desktopImageId) ?? null : null,
+        mobileImage: section.mobileImageId ? byId.get(section.mobileImageId) ?? null : null,
+      };
+    }
+    if ("imageId" in section && section.imageId) return { ...section, image: byId.get(section.imageId) ?? null };
+    return section;
   });
 }
 
 export async function getHomepage() {
   const existing = await prisma.homepage.findUnique({ where: { id: HOMEPAGE_ID } });
-  const row =
-    existing ??
-    (await prisma.homepage.create({
-      data: { id: HOMEPAGE_ID, sections: defaultHomepageSections, version: 1 },
-    }));
+  // Reads must not create rows or race on first access to a new environment.
+  const row = existing ?? { id: HOMEPAGE_ID, sections: defaultHomepageSections, version: 1, updatedAt: new Date(0) };
 
   const sections = parseSections(row.sections);
   return {
@@ -62,23 +56,28 @@ export async function getHomepage() {
 
 export async function updateHomepage(input: HomepageWrite) {
   const payload = homepageWriteSchema.parse(input);
-  const current = await prisma.homepage.findUnique({ where: { id: HOMEPAGE_ID } });
-  const currentVersion = current?.version ?? 1;
-
-  if (current && payload.expectedVersion !== undefined && currentVersion !== payload.expectedVersion) {
-    throw new HttpError(409, "A homepage foi alterada por outra pessoa. Recarregue e tente de novo.", {
-      code: "VERSION_CONFLICT",
-    });
+  const imageIds = homepageMediaIds(payload.sections);
+  if (imageIds.length) {
+    const images = await prisma.mediaAsset.findMany({ where: { id: { in: imageIds }, type: "IMAGE" }, select: { id: true } });
+    if (images.length !== imageIds.length) {
+      throw new HttpError(400, "Selecione imagens existentes na biblioteca de mídia.", { code: "VALIDATION_ERROR" });
+    }
   }
 
-  const saved = current
-    ? await prisma.homepage.update({
-        where: { id: HOMEPAGE_ID },
-        data: { sections: payload.sections, version: currentVersion + 1 },
-      })
-    : await prisma.homepage.create({
-        data: { id: HOMEPAGE_ID, sections: payload.sections, version: 1 },
-      });
+  const saved = await prisma.$transaction(async (tx) => {
+    await tx.homepage.upsert({
+      where: { id: HOMEPAGE_ID },
+      create: { id: HOMEPAGE_ID, sections: defaultHomepageSections, version: 1 },
+      update: {},
+    });
+    const updated = await tx.homepage.updateMany({
+      where: { id: HOMEPAGE_ID, version: payload.expectedVersion },
+      data: { sections: payload.sections, version: { increment: 1 } },
+    });
+    const current = await tx.homepage.findUniqueOrThrow({ where: { id: HOMEPAGE_ID } });
+    if (updated.count !== 1) throw versionConflictError(current);
+    return current;
+  });
 
   return {
     id: saved.id,
@@ -88,9 +87,25 @@ export async function updateHomepage(input: HomepageWrite) {
   };
 }
 
-export function heroCampaignId(sections: HomepageSection[]) {
-  const hero = sections.find(
-    (section) => (section.type === "HERO" || section.type === "hero_campaign") && section.enabled,
+export function seasonalCampaignSlot(sections: HomepageSection[]) {
+  const slot = sections.find(
+    (section) => (section.type === "SEASONAL_CAMPAIGN" || section.type === "HERO" || section.type === "hero_campaign") && section.enabled,
   );
-  return hero && hero.type === "HERO" ? (hero.campaignId ?? null) : null;
+  return { enabled: Boolean(slot), campaignId: slot && "campaignId" in slot ? slot.campaignId ?? null : null };
+}
+
+/** A campaign preview is visible even when its homepage slot is currently disabled. */
+export function withCampaignPreviewSlot<T extends HomepageSection>(sections: T[]): HomepageSection[] {
+  const isSeasonal = (section: HomepageSection) => ["SEASONAL_CAMPAIGN", "HERO", "hero_campaign"].includes(section.type);
+  const index = sections.findIndex(isSeasonal);
+  if (index !== -1) {
+    return sections.map((section, sectionIndex) => isSeasonal(section) ? { ...section, enabled: sectionIndex === index } : section);
+  }
+  const ids = new Set(sections.map((section) => section.id));
+  let id = "campaign-preview";
+  for (let suffix = 2; ids.has(id); suffix += 1) id = `campaign-preview-${suffix}`;
+  const result: HomepageSection[] = [...sections];
+  const heroIndex = sections.findIndex((section) => section.type === "BRAND_HERO");
+  result.splice(heroIndex + 1, 0, { id, type: "SEASONAL_CAMPAIGN", enabled: true });
+  return result;
 }

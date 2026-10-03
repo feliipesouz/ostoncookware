@@ -7,7 +7,7 @@ import { toMediaSummary } from "../../../lib/media.js";
 import { requireExpectedVersion, throwIfVersionConflict, type ContentActor, updateWhereVersion } from "../../../lib/occ.js";
 import { toPage } from "../../../lib/pagination.js";
 import { createRevision, diffSummary } from "../../../lib/revisions.js";
-import { assertInTrash, softDeleteData, trashWhere } from "../../../lib/soft-delete.js";
+import { assertInTrash, trashWhere } from "../../../lib/soft-delete.js";
 import { resolveActiveCampaign } from "../domain/resolve-active-campaign.js";
 
 const include = {
@@ -109,20 +109,19 @@ export async function getCampaign(id: string) {
   return mapCampaign(await load(id));
 }
 
-export async function getActiveCampaign() {
-  const now = new Date();
+export async function getActiveCampaign(now = new Date()) {
   const rows = await prisma.campaign.findMany({
     where: {
       deletedAt: null,
       status: { in: ["PUBLISHED", "SCHEDULED"] },
       AND: [
         { OR: [{ startsAt: null }, { startsAt: { lte: now } }] },
-        { OR: [{ endsAt: null }, { endsAt: { gte: now } }] },
+        { OR: [{ endsAt: null }, { endsAt: { gt: now } }] },
       ],
     },
     include,
   });
-  const active = resolveActiveCampaign(rows);
+  const active = resolveActiveCampaign(rows, now);
   return active ? mapCampaign(active) : null;
 }
 
@@ -207,7 +206,7 @@ export async function archiveCampaign(id: string) {
   await load(id);
   const updated = await prisma.campaign.update({
     where: { id },
-    data: { status: "ARCHIVED" },
+    data: { status: "ARCHIVED", version: { increment: 1 } },
     include,
   });
   return mapCampaign(updated);
@@ -217,7 +216,7 @@ export async function softDeleteCampaign(id: string, actor?: ContentActor) {
   await load(id);
   const updated = await prisma.campaign.update({
     where: { id },
-    data: { ...softDeleteData(), updatedById: actor?.id ?? null },
+    data: { deletedAt: new Date(), status: "ARCHIVED", version: { increment: 1 }, updatedById: actor?.id ?? null },
     include,
   });
   return mapCampaign(updated);
@@ -227,7 +226,7 @@ export async function restoreCampaign(id: string, actor?: ContentActor) {
   await load(id);
   const updated = await prisma.campaign.update({
     where: { id },
-    data: { deletedAt: null, updatedById: actor?.id ?? null },
+    data: { deletedAt: null, version: { increment: 1 }, updatedById: actor?.id ?? null },
     include,
   });
   return mapCampaign(updated);

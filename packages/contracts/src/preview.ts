@@ -10,6 +10,10 @@ const PREVIEW_PATHS = [
 export const previewTypeSchema = ["product", "collection", "campaign", "page", "home"] as const;
 export type PreviewType = (typeof previewTypeSchema)[number];
 
+export function parseCampaignPreviewId(value: string | null | undefined) {
+  return value && /^[a-zA-Z0-9_-]{1,64}$/.test(value) ? value : null;
+}
+
 export function normalizePreviewPath(path: string) {
   const [withoutQuery] = path.trim().split("?");
   return withoutQuery ?? "";

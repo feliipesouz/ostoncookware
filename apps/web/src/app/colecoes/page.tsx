@@ -1,72 +1,73 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { CollectionExplorer } from "@/components/site/catalogue-browser";
+import { CatalogDownload } from "@/components/site/catalog-download";
 import { PublicChrome } from "@/components/site/public-chrome";
-import { SiteImage } from "@/components/site/site-image";
 import { mediaSrc } from "@/lib/api";
 import { getCollections, getPublicSiteSafe, isDraftEnabled } from "@/lib/content";
-import { jsonLd, siteMetadata } from "@/lib/seo";
+import { absoluteUrl, jsonLd, siteMetadata } from "@/lib/seo";
 
 export const revalidate = 60;
 
 export async function generateMetadata(): Promise<Metadata> {
-  const { settings } = await getPublicSiteSafe();
-  return siteMetadata(settings, {
-    title: "Coleções",
-    description: "Coleções OSTON. Conteúdo demonstrativo até o catálogo oficial.",
+  const [site, collections, draft] = await Promise.all([
+    getPublicSiteSafe(), getCollections().catch(() => null), isDraftEnabled(),
+  ]);
+  return siteMetadata(site.settings, {
+    title: "Coleções de panelas",
+    description: "Explore as coleções de panelas OSTON, conheça os conjuntos e encontre a cor que combina com a sua cozinha. Consulte nossa equipe.",
     path: "/colecoes",
+    noindex: draft || !collections?.length || collections.every((collection) => collection.isDemo),
   });
 }
 
 export default async function CollectionsPage() {
-  const [site, collections] = await Promise.all([
-    getPublicSiteSafe(),
-    getCollections().catch(() => []),
+  const [site, result, draft] = await Promise.all([
+    getPublicSiteSafe(), getCollections().catch(() => null), isDraftEnabled(),
   ]);
-  const draft = await isDraftEnabled();
+  const collections = result ?? [];
+  const published = collections.filter((collection) => !collection.isDemo);
   const listLd = jsonLd({
     "@context": "https://schema.org",
     "@type": "ItemList",
-    itemListElement: collections.map((collection, index) => ({
+    name: "Coleções de panelas " + site.settings.brandName,
+    itemListElement: published.map((collection, index) => ({
       "@type": "ListItem",
       position: index + 1,
       name: collection.name,
-      url: `${process.env.NEXT_PUBLIC_SITE_URL ?? ""}/colecoes/${collection.slug}`,
+      url: absoluteUrl("/colecoes/" + collection.slug),
     })),
   });
 
   return (
     <>
-      {!draft ? (
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: listLd }} />
-      ) : null}
+      {!draft && published.length > 0 ? <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: listLd }} /> : null}
       <PublicChrome settings={site.settings} navigation={site.navigation} announcement={site.announcement}>
-        <main className="bg-background pb-24">
-          <div className="site-grid py-16 md:py-24">
-            <p className="text-[0.7rem] tracking-[0.42em] uppercase text-brand">Catálogo</p>
-            <h1 className="font-display mt-4 text-5xl md:text-7xl">Coleções</h1>
-            <p className="mt-6 max-w-xl text-foreground-muted">
-              Linhas demonstrativas para validar o espaço editorial. O catálogo oficial substitui estes
-              dados no CMS.
-            </p>
+        <main className="bg-background pb-24 md:pb-32">
+          <div className="site-grid grid gap-8 pt-12 pb-14 md:grid-cols-12 md:pt-20 md:pb-20">
+            <div className="md:col-span-8">
+              <p className="eyebrow">O universo OSTON</p>
+              <h1 className="display-title mt-5">Encontre a sua<br /><span className="italic text-brand">assinatura.</span></h1>
+            </div>
+            <div className="md:col-span-4 md:self-end">
+              <p className="editorial-copy max-w-md">Uma escolha que começa pelo olhar. Explore as cores, conheça os conjuntos e imagine a OSTON na sua cozinha.</p>
+              {site.settings.catalogPdf ? (
+                <CatalogDownload href={mediaSrc(site.settings.catalogPdf.url)} className="button-link mt-6">Consultar catálogo completo <span aria-hidden="true">↗</span></CatalogDownload>
+              ) : <Link href="/contato" className="button-link mt-6">Conte com nossa equipe <span aria-hidden="true">↗</span></Link>}
+            </div>
           </div>
-          <div className="site-grid grid gap-10 md:grid-cols-2">
-            {collections.map((collection) => (
-              <Link key={collection.id} href={`/colecoes/${collection.slug}`} className="group">
-                <div className="relative aspect-[4/5] overflow-hidden bg-graphite">
-                  {collection.coverImage ? (
-                    <SiteImage
-                      src={mediaSrc(collection.coverImage.url)}
-                      alt={collection.coverImage.alt ?? collection.name}
-                      fill
-                      sizes="(max-width: 768px) 100vw, 50vw"
-                      className="object-cover transition-transform duration-700 group-hover:scale-[1.03]"
-                    />
-                  ) : null}
-                </div>
-                <h2 className="font-display mt-5 text-3xl">{collection.name}</h2>
-                <p className="mt-2 text-sm text-foreground-muted">{collection.shortDescription}</p>
-              </Link>
-            ))}
+          <div className="site-grid">
+            {collections.length ? <CollectionExplorer collections={collections} /> : (
+              <div className="border-y border-border py-16">
+                <h2 className="font-display text-3xl">{result === null ? "O catálogo está temporariamente indisponível." : "As próximas escolhas começam aqui."}</h2>
+                <p className="mt-4 max-w-lg text-sm leading-7 text-foreground-muted">{result === null ? "Você pode tentar novamente em instantes ou falar com nossa equipe." : "Converse com nossa equipe para conhecer os conjuntos OSTON."}</p>
+                <Link href="/contato" className="button-primary mt-6">Falar com a OSTON <span aria-hidden="true">↗</span></Link>
+              </div>
+            )}
+          </div>
+          <div className="site-grid mt-20 flex flex-col gap-6 border-t border-border pt-10 md:flex-row md:items-center md:justify-between">
+            <div><p className="eyebrow">Uma escolha com atenção</p><h2 className="font-display mt-3 text-3xl md:text-4xl">Vamos encontrar a sua OSTON?</h2></div>
+            <Link href="/contato" className="button-secondary">Falar com um consultor <span aria-hidden="true">↗</span></Link>
           </div>
         </main>
       </PublicChrome>

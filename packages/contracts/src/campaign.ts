@@ -23,7 +23,7 @@ export const campaignWriteSchema = z
     secondaryCtaUrl: safeCtaUrlSchema.nullable().optional(),
     textAlign: campaignTextAlignSchema.default("left"),
     focalPosition: campaignFocalSchema.default("center"),
-    overlay: z.number().min(0).max(80).default(42),
+    overlay: z.number().int().min(0).max(80).default(42),
     startsAt: z.coerce.date().nullable().optional(),
     endsAt: z.coerce.date().nullable().optional(),
     status: contentStatusSchema.default("DRAFT"),
@@ -33,7 +33,10 @@ export const campaignWriteSchema = z
   })
   .strict()
   .superRefine((value, ctx) => {
-    if (value.startsAt && value.endsAt && value.endsAt < value.startsAt) {
+    if (value.status === "SCHEDULED" && !value.startsAt) {
+      ctx.addIssue({ code: "custom", message: "Informe a data de início para agendar a campanha.", path: ["startsAt"] });
+    }
+    if (value.startsAt && value.endsAt && value.endsAt <= value.startsAt) {
       ctx.addIssue({
         code: "custom",
         message: "A data final deve ser posterior à data inicial.",
@@ -46,6 +49,9 @@ export const campaignWriteSchema = z
         message: "Informe a URL do CTA secundário.",
         path: ["secondaryCtaUrl"],
       });
+    }
+    if (value.secondaryCtaUrl && !value.secondaryCtaLabel) {
+      ctx.addIssue({ code: "custom", message: "Informe o texto do CTA secundário.", path: ["secondaryCtaLabel"] });
     }
   });
 
