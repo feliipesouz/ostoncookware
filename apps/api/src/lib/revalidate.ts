@@ -1,4 +1,5 @@
 import { loadEnv } from "../config/env.js";
+import { serverLog } from "./logging.js";
 
 export const REVALIDATE_TAGS = [
   "site",
@@ -28,19 +29,24 @@ export async function revalidateSite(tags: string[]) {
   await Promise.all(
     env.webOrigins.map(async (origin) => {
       try {
-        await fetch(`${origin}/api/revalidate`, {
+        const response = await fetch(`${origin}/api/revalidate`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             "x-revalidation-secret": env.REVALIDATION_SECRET,
           },
           body: JSON.stringify({ tags: uniqueTags }),
+          signal: AbortSignal.timeout(5_000),
         });
-      } catch (error) {
-        console.error("Revalidation failed", { origin, tags: uniqueTags });
-        if (error instanceof Error) {
-          console.error(error.message);
+        if (!response.ok) {
+          serverLog("warn", "cache.revalidation.rejected", {
+            origin,
+            tags: uniqueTags,
+            statusCode: response.status,
+          });
         }
+      } catch (error) {
+        serverLog("warn", "cache.revalidation.failed", { origin, tags: uniqueTags, error });
       }
     }),
   );

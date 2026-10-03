@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import type { FastifyRequest } from "fastify";
 import { campaignWriteSchema, isSafeCtaUrl, leadCreateSchema, paginationQuerySchema } from "@oston/contracts";
 import { can } from "./authz.js";
 import { parseOrigins } from "../config/env.js";
@@ -7,6 +8,7 @@ import { filterRevalidateTags } from "./revalidate.js";
 import { PINO_REDACT_PATHS } from "./logging.js";
 import { assertSafeBlobPath, assertUpload, isTrustedBlobUrl } from "../modules/media/application/upload-rules.js";
 import { HttpError } from "./errors.js";
+import { clientIp } from "./http.js";
 
 describe("RBAC", () => {
   it("allows editors to write content but not settings, users or audit", () => {
@@ -136,6 +138,20 @@ describe("origins", () => {
   it("rejects invalid origin values", () => {
     expect(() => parseOrigins("oston.com")).toThrow();
     expect(() => parseOrigins("javascript:alert(1)")).toThrow();
+  });
+});
+
+describe("client identity", () => {
+  it("uses Fastify's trusted address instead of unverified forwarding headers", () => {
+    const request = {
+      ip: "198.51.100.42",
+      headers: {
+        "x-real-ip": "203.0.113.1",
+        "x-vercel-forwarded-for": "203.0.113.2",
+        "x-forwarded-for": "203.0.113.3",
+      },
+    } as unknown as FastifyRequest;
+    expect(clientIp(request)).toBe("198.51.100.42");
   });
 });
 

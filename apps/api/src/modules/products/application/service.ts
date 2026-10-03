@@ -93,6 +93,11 @@ function mapProduct(row: Awaited<ReturnType<typeof load>>) {
   };
 }
 
+function mapPublishedProduct(row: Awaited<ReturnType<typeof load>>) {
+  const product = mapProduct(row);
+  return { ...product, variants: product.variants.filter((variant) => variant.status === "PUBLISHED") };
+}
+
 function toSnapshot(data: ProductWrite, slug: string) {
   return {
     collectionId: data.collectionId,
@@ -197,7 +202,7 @@ export async function listPublishedProducts(collectionId?: string) {
     include,
     orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
   });
-  return rows.map(mapProduct);
+  return rows.map(mapPublishedProduct);
 }
 
 export async function getProductBySlugForPreview(slug: string) {
@@ -257,7 +262,7 @@ export async function getProductBySlug(slug: string) {
   if (!row || row.status !== "PUBLISHED" || row.deletedAt) {
     throw new HttpError(404, "Produto não encontrado.", { code: "NOT_FOUND" });
   }
-  return mapProduct(row);
+  return mapPublishedProduct(row);
 }
 
 export async function createProduct(input: ProductWrite, actor?: ContentActor) {

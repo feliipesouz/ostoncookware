@@ -1,5 +1,6 @@
 import type { FastifyInstance } from "fastify";
-import { sendProblem } from "../../lib/errors.js";
+import { z } from "zod";
+import { HttpError, sendProblem } from "../../lib/errors.js";
 import { requireUser } from "../../lib/http.js";
 import { getCampaign } from "../campaigns/application/service.js";
 import { getCollectionBySlugForPreview } from "../collections/application/service.js";
@@ -46,7 +47,9 @@ export async function registerPreviewRoutes(app: FastifyInstance) {
     try {
       await requireUser(request, "content:read");
       const { id } = request.params as { id: string };
-      return { data: await getCampaign(id) };
+      const campaign = await getCampaign(id);
+      if (campaign.deletedAt) throw new HttpError(404, "Campanha não encontrada.", { code: "NOT_FOUND" });
+      return { data: campaign };
     } catch (error) {
       return sendProblem(request, reply, error);
     }
@@ -64,7 +67,8 @@ export async function registerPreviewRoutes(app: FastifyInstance) {
   app.get("/v1/admin/preview/site", async (request, reply) => {
     try {
       await requireUser(request, "content:read");
-      return { data: await assemblePublicSite({ preview: true }) };
+      const query = z.object({ campaignId: z.string().regex(/^[a-zA-Z0-9_-]{1,64}$/).optional() }).parse(request.query);
+      return { data: await assemblePublicSite({ preview: true, campaignId: query.campaignId }) };
     } catch (error) {
       return sendProblem(request, reply, error);
     }

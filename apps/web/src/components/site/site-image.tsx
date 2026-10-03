@@ -1,4 +1,5 @@
 import Image, { type ImageProps } from "next/image";
+import { imageSource } from "@/lib/media";
 
 function isSvgSrc(src: ImageProps["src"]) {
   if (typeof src !== "string") {
@@ -9,7 +10,18 @@ function isSvgSrc(src: ImageProps["src"]) {
 }
 
 /** SVG local: <img> nativo. O optimizer do Next aplica CSP `sandbox` e o Chrome some com a imagem. */
-export function SiteImage({ src, alt, className, fill, style, sizes, priority, unoptimized, ...props }: ImageProps) {
+export function SiteImage({
+  src,
+  alt,
+  className,
+  fill,
+  style,
+  sizes,
+  priority,
+  unoptimized,
+  ...props
+}: ImageProps) {
+  if (typeof src === "string") src = imageSource(src);
   if (typeof src === "string" && src.startsWith("/demo/") && src.toLowerCase().endsWith(".svg")) {
     src = `${src.slice(0, -4)}.png`;
   }
@@ -23,7 +35,14 @@ export function SiteImage({ src, alt, className, fill, style, sizes, priority, u
         className={className}
         style={
           fill
-            ? { position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", ...style }
+            ? {
+                position: "absolute",
+                inset: 0,
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                ...style,
+              }
             : style
         }
       />

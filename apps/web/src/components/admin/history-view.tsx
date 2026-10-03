@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { adminMutate, AdminApiError } from "@/lib/admin-client";
 import { formatRelativeDay } from "@/lib/admin-format";
 import { ConfirmDialog } from "./ui/confirm-dialog";
@@ -60,23 +60,25 @@ export function HistoryView({
   entityLabel,
   entityName,
   versionsPath,
-  restorePath,
+  currentVersion,
 }: {
   entityLabel: string;
   entityName: string;
   versionsPath: string;
-  restorePath: (version: HistoryVersion) => string;
+  currentVersion: number;
 }) {
   const [versions, setVersions] = useState<HistoryVersion[] | null>(null);
   const [error, setError] = useState("");
   const [open, setOpen] = useState<number | null>(null);
   const [restore, setRestore] = useState<HistoryVersion | null>(null);
   const [busy, setBusy] = useState(false);
+  const expectedVersion = useRef(currentVersion);
 
   useEffect(() => {
+    expectedVersion.current = currentVersion;
     void load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [versionsPath]);
+  }, [versionsPath, currentVersion]);
 
   async function load() {
     setError("");
@@ -99,7 +101,12 @@ export function HistoryView({
     if (!restore) return;
     setBusy(true);
     try {
-      await adminMutate(restorePath(restore), "POST", { expectedVersion: restore.version, changeSummary: `Restaurou a versão ${restore.version}` });
+      const result = await adminMutate<{ data: { version: number } }>(
+        `${versionsPath}/${encodeURIComponent(String(restore.id ?? restore.version))}/restore`,
+        "POST",
+        { expectedVersion: expectedVersion.current, changeSummary: `Restaurou a versão ${restore.version}` },
+      );
+      expectedVersion.current = result.data.version;
       setRestore(null);
       await load();
     } catch (err) {

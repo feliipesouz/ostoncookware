@@ -29,7 +29,9 @@ export async function handleWebRequest(request: Request): Promise<Response> {
     method,
     url: `${url.pathname}${url.search}`,
     headers,
-    remoteAddress: request.headers.get("x-forwarded-for")?.split(",")[0]?.trim(),
+    remoteAddress: process.env.VERCEL
+      ? request.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
+      : undefined,
     payload: hasBody ? Buffer.from(await request.arrayBuffer()) : undefined,
   });
 

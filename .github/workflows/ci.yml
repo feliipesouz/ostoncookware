@@ -5,6 +5,13 @@ on:
     branches: [main]
   pull_request:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   verify:
     runs-on: ubuntu-latest
@@ -36,6 +43,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
+        with:
+          version: 10.5.2
       - uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -60,8 +69,19 @@ jobs:
       - run: pnpm build
       - name: Install Playwright
         run: pnpm --filter @oston/web exec playwright install --with-deps chromium
-      - name: E2E smoke
+      - name: E2E suites
         env:
           E2E_ADMIN_EMAIL: ci-owner@ostoncookware.com
           E2E_ADMIN_PASSWORD: CiPassword1234
-        run: pnpm test:e2e
+        run: |
+          pnpm --filter @oston/web exec playwright test e2e/catalogue.spec.ts e2e/media-source.spec.ts e2e/runtime.spec.ts --workers=1 --output=test-results/catalogue
+          pnpm --filter @oston/web exec playwright test e2e/auth.spec.ts e2e/editorial.spec.ts e2e/preview.spec.ts --workers=1 --output=test-results/editorial
+          pnpm --filter @oston/web exec playwright test e2e/smoke.spec.ts --workers=1 --output=test-results/smoke
+      - name: Preserve failure traces
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-failure-traces
+          path: apps/web/test-results
+          if-no-files-found: ignore
+          retention-days: 7

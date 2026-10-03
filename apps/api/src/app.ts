@@ -26,7 +26,7 @@ import { registerRevisionRoutes } from "./modules/revisions/presentation.js";
 import { registerTrashRoutes } from "./modules/trash/presentation.js";
 import { registerEventRoutes } from "./modules/events/presentation.js";
 
-import { PINO_REDACT_PATHS } from "./lib/logging.js";
+import { errorForLog, PINO_REDACT_PATHS, serverLog } from "./lib/logging.js";
 
 let appPromise: Promise<FastifyInstance> | null = null;
 
@@ -35,7 +35,7 @@ export async function buildApp() {
 
   const onVercel = Boolean(process.env.VERCEL);
   const app = Fastify({
-    // Pino/thread-stream quebram no bundle serverless da Vercel.
+    // Vercel uses the structured hooks below; Pino transports require worker files.
     logger: onVercel
       ? false
       : {
@@ -45,11 +45,17 @@ export async function buildApp() {
             censor: "[redacted]",
             remove: false,
           },
+          serializers: {
+            req: (request) => ({ method: request.method, url: request.routeOptions?.url ?? "unmatched" }),
+            err: (error) => ({ ...errorForLog(error), message: "[redacted]", stack: "[redacted]" }),
+          },
         },
-    requestIdHeader: "x-request-id",
+    // Do not reflect arbitrary client-controlled values into response headers/logs.
+    requestIdHeader: false,
     genReqId: () => randomUUID(),
     bodyLimit: 1_048_576,
-    trustProxy: true,
+    // Vercel overwrites X-Forwarded-For. The standalone API trusts its socket.
+    trustProxy: onVercel,
   });
 
   app.addHook("onRequest", async (request, reply) => {
@@ -58,6 +64,20 @@ export async function buildApp() {
       noStore(reply);
     }
   });
+
+  if (onVercel) {
+    app.addHook("onResponse", async (request, reply) => {
+      const route = request.routeOptions.url ?? "unmatched";
+      if (route === "/health" || route === "/ready") return;
+      serverLog(reply.statusCode >= 500 ? "error" : "info", "http.request.completed", {
+        correlationId: request.id,
+        method: request.method,
+        route,
+        statusCode: reply.statusCode,
+        durationMs: Math.round(reply.elapsedTime),
+      });
+    });
+  }
 
   await registerSecurity(app, env);
   await registerHealth(app);

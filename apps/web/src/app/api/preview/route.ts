@@ -1,5 +1,5 @@
 import { dispatchApi } from "@/lib/dispatch-api";
-import { previewPathFromParams, resolvePreviewAccess } from "@/lib/preview";
+import { CAMPAIGN_PREVIEW_COOKIE, parseCampaignPreviewId, previewPathFromParams, resolvePreviewAccess } from "@/lib/preview";
 import { draftMode } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -33,7 +33,29 @@ export async function GET(request: NextRequest) {
     );
   }
 
+  const isCampaign = params.get("type") === "campaign";
+  const campaignId = isCampaign ? parseCampaignPreviewId(params.get("id")) : null;
+  if (isCampaign && !campaignId) {
+    return NextResponse.json({ title: "Campanha de preview inválida.", status: 400 }, { status: 400 });
+  }
+  if (campaignId) {
+    const campaign = await dispatchApi(`/v1/admin/preview/campaigns/${campaignId}`, {
+      headers: { cookie: request.headers.get("cookie") ?? "" },
+    });
+    if (!campaign.ok) {
+      return NextResponse.json({ title: "Não foi possível visualizar esta campanha.", status: campaign.status }, { status: campaign.status });
+    }
+  }
+
   const draft = await draftMode();
   draft.enable();
-  return NextResponse.redirect(new URL(access.path, request.url));
+  const response = NextResponse.redirect(new URL(access.path, request.url));
+  if (campaignId) {
+    response.cookies.set(CAMPAIGN_PREVIEW_COOKIE, campaignId, {
+      httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", path: "/", maxAge: 3600,
+    });
+  } else {
+    response.cookies.delete(CAMPAIGN_PREVIEW_COOKIE);
+  }
+  return response;
 }

@@ -42,23 +42,13 @@ export async function requireUser(request: FastifyRequest, permission?: Permissi
 }
 
 export function clientIp(request: FastifyRequest) {
-  const vercel = request.headers["x-vercel-forwarded-for"];
-  if (typeof vercel === "string" && vercel.length > 0) {
-    return vercel.split(",")[0]?.trim() ?? request.ip;
-  }
-  const realIp = request.headers["x-real-ip"];
-  if (typeof realIp === "string" && realIp.length > 0) {
-    return realIp.trim();
-  }
+  // Fastify applies the deployment's trustProxy policy; never re-read arbitrary
+  // forwarding headers here or the persistent throttle can be bypassed locally.
   return request.ip;
 }
 
 export function requestId(request: FastifyRequest) {
-  const existing = request.headers["x-request-id"];
-  if (typeof existing === "string" && existing.length > 0) {
-    return existing;
-  }
-  return randomUUID();
+  return request.id || randomUUID();
 }
 
 export function noStore(reply: FastifyReply) {

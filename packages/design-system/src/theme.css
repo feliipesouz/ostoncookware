@@ -11,29 +11,30 @@
   color-scheme: light;
 
   /* Surfaces */
-  --background: #f5f1e8;
-  --surface: #fbf8f1;
+  --background: #f4f0e8;
+  --surface: #faf7f1;
+  --surface-muted: #e9e2d7;
   --surface-elevated: #ffffff;
-  --surface-inverse: #171614;
+  --surface-inverse: #1c211e;
 
   /* Text */
-  --foreground: #171614;
-  --foreground-muted: #777168;
-  --foreground-subtle: #9a9488;
-  --foreground-inverse: #f5f1e8;
+  --foreground: #252923;
+  --foreground-muted: #65685e;
+  --foreground-subtle: #79796e;
+  --foreground-inverse: #f4f0e8;
 
   /* Brand */
-  --brand: #a97845;
-  --brand-hover: #8f6438;
+  --brand: #8d5d38;
+  --brand-hover: #72472a;
   --brand-foreground: #fbf8f1;
-  --accent: #c29a68;
+  --accent: #d8b992;
   --accent-hover: #b58955;
   --accent-foreground: #171614;
 
   /* Line / focus */
-  --border: #e4ddd0;
-  --border-strong: #cfc6b6;
-  --ring: #a97845;
+  --border: #ded9ce;
+  --border-strong: #bebbad;
+  --ring: #b07a4b;
 
   /* Feedback */
   --success: #3f6b4a;
@@ -57,35 +58,39 @@
 
   /* Elevation — restrained, not SaaS shadows */
   --shadow-soft: 0 1px 0 rgb(23 22 20 / 0.04);
+  --shadow-editorial: 0 24px 64px rgb(23 22 20 / 0.09);
 
   /* Motion */
   --ease-editorial: cubic-bezier(0.22, 1, 0.36, 1);
   --duration-reveal: 700ms;
+  --duration-interaction: 220ms;
+  --space-section: clamp(4.5rem, 9vw, 9rem);
 
   /* Type — stacks are the source of truth. @theme cannot reuse the same
      custom-property name or :root becomes a cycle and font-family goes invalid. */
-  --font-display-stack: "Cormorant Garamond", "Times New Roman", serif;
-  --font-body-stack: "Manrope", ui-sans-serif, system-ui, sans-serif;
-  --font-admin-stack: "Manrope", ui-sans-serif, system-ui, sans-serif;
+  --font-display-stack: var(--font-cormorant, "Cormorant Garamond"), "Times New Roman", serif;
+  --font-body-stack: var(--font-manrope, "Manrope"), ui-sans-serif, system-ui, sans-serif;
+  --font-admin-stack: var(--font-manrope, "Manrope"), ui-sans-serif, system-ui, sans-serif;
   --font-display: var(--font-display-stack);
   --font-body: var(--font-body-stack);
   --font-admin: var(--font-admin-stack);
 
   /* Layout */
   --header-height: 5.25rem;
-  --max-width: 88rem;
+  --max-width: 92rem;
   --gutter: 1.25rem;
 }
 
 @media (min-width: 768px) {
   :root {
     --gutter: 2rem;
+    --header-height: 6rem;
   }
 }
 
 @media (min-width: 1280px) {
   :root {
-    --gutter: 2.5rem;
+    --gutter: 3.5rem;
   }
 }
 

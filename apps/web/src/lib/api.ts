@@ -9,14 +9,15 @@ export class ApiError extends Error {
 }
 
 export function mediaSrc(url: string) {
+  const source = imageSource(url);
   try {
-    const parsed = new URL(url);
+    const parsed = new URL(source);
     if (parsed.pathname.startsWith("/demo/")) {
       return demoPublicPath(parsed.pathname);
     }
-    return url;
+    return source;
   } catch {
-    return demoPublicPath(url);
+    return demoPublicPath(source);
   }
 }
 
@@ -37,3 +38,4 @@ export function whatsappLink(phone: string | null | undefined, message: string) 
   }
   return `https://wa.me/${digits}?text=${encodeURIComponent(message.slice(0, 300))}`;
 }
+import { imageSource } from "./media";

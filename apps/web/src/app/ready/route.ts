@@ -1,5 +1,5 @@
 import { prisma } from "@oston/database";
-import { publicRuntimeError } from "@/lib/runtime-error";
+import { unavailableResponse } from "@oston/api/runtime";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -7,12 +7,8 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   try {
     await prisma.$queryRaw`SELECT 1`;
-    return Response.json({ status: "ready", runtime: "prisma" });
+    return Response.json({ status: "ready" }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
-    console.error("[oston-ready]", error);
-    return Response.json(
-      { status: "error", runtime: "prisma", message: publicRuntimeError(error) },
-      { status: 503 },
-    );
+    return unavailableResponse(error, "readiness");
   }
 }

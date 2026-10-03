@@ -4,6 +4,6 @@
     "noEmit": true,
     "rootDir": "."
   },
-  "include": ["src/client.ts", "src/index.ts", "src/seed.ts", "prisma.config.ts"],
+  "include": ["src/client.ts", "src/index.ts", "src/seed.ts", "src/seed-catalog.ts", "src/catalog-data.ts", "prisma.config.ts"],
   "exclude": ["src/generated"]
 }

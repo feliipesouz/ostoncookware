@@ -1,55 +1,47 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { PublicChrome } from "@/components/site/public-chrome";
-import {
-  getInstitutionalPage,
-  getPublicSiteSafe,
-  pageParagraphs,
-} from "@/lib/content";
+import { getInstitutionalPage, getPublicSiteSafe, isDraftEnabled, pageParagraphs } from "@/lib/content";
 import { siteMetadata } from "@/lib/seo";
 
 export const revalidate = 60;
 
 const FALLBACK_BODY = [
-  "A OSTON nasce como uma marca de cookware contemporâneo: silenciosa na comunicação, precisa no gesto, sofisticada na presença. Esta página conta a intenção da marca — não um dossiê técnico.",
-  "O modelo comercial é consultivo. O site apresenta coleções, captura interesse e prepara o terreno para um embaixador oficial, quando o cliente autorizar imagem e nome.",
-  "Especificações, origem, materiais e preços entram apenas com o catálogo oficial.",
+  "Entre o preparo e a mesa, existe o seu jeito de cozinhar. A OSTON convida você a escolher os conjuntos e as cores que fazem parte desse momento.",
+  "Explore as coleções, conheça a composição de cada conjunto e converse com nossa equipe para encontrar a sua próxima escolha.",
 ];
 
 export async function generateMetadata(): Promise<Metadata> {
-  const [{ settings }, page] = await Promise.all([
-    getPublicSiteSafe(),
-    getInstitutionalPage("a-marca").catch(() => null),
+  const [site, page, draft] = await Promise.all([
+    getPublicSiteSafe(), getInstitutionalPage("a-marca").catch(() => null), isDraftEnabled(),
   ]);
-  return siteMetadata(settings, {
+  return siteMetadata(site.settings, {
     title: page?.seoTitle ?? page?.title ?? "A marca",
-    description: page?.seoDescription ?? "OSTON Cookware. Cozinhando com qualidade e estilo.",
+    description: page?.seoDescription ?? "Conheça a OSTON Cookware e explore nossas coleções de panelas.",
     path: "/a-marca",
+    noindex: draft,
   });
 }
 
 export default async function BrandPage() {
   const [site, page] = await Promise.all([
-    getPublicSiteSafe(),
-    getInstitutionalPage("a-marca").catch(() => null),
+    getPublicSiteSafe(), getInstitutionalPage("a-marca").catch(() => null),
   ]);
   const paragraphs = page ? pageParagraphs(page.body) : FALLBACK_BODY;
-
   return (
     <PublicChrome settings={site.settings} navigation={site.navigation} announcement={site.announcement}>
       <main className="bg-background">
-        <div className="site-grid max-w-4xl py-20 md:py-28">
-          <p className="text-[0.7rem] tracking-[0.42em] uppercase text-brand">
-            {page?.eyebrow ?? "A marca"}
-          </p>
-          <h1 className="font-display mt-4 text-5xl md:text-7xl">
-            {page?.title ?? "Cozinhando com qualidade e estilo"}
-          </h1>
-          <div className="editorial-rule mt-8" />
-          {paragraphs.map((paragraph) => (
-            <p key={paragraph.slice(0, 24)} className="mt-10 text-lg leading-9 text-foreground-muted first:mt-10">
-              {paragraph}
-            </p>
-          ))}
+        <div className="site-grid grid gap-10 py-16 md:grid-cols-12 md:py-28">
+          <div className="md:col-span-7">
+            <p className="eyebrow">{page?.eyebrow ?? "A marca"}</p>
+            <h1 className="display-title mt-5">{page?.title ?? "O seu jeito de estar à mesa."}</h1>
+            <div className="editorial-rule mt-8" />
+          </div>
+          <div className="md:col-span-5 md:pt-12">
+            {paragraphs.map((paragraph, index) => <p key={index} className="editorial-copy mt-7 first:mt-0">{paragraph}</p>)}
+            <Link href="/colecoes" className="button-primary mt-10">Explore as coleções <span aria-hidden="true">↗</span></Link>
+            <Link href="/contato" className="button-link mt-6">Converse com a OSTON <span aria-hidden="true">↗</span></Link>
+          </div>
         </div>
       </main>
     </PublicChrome>

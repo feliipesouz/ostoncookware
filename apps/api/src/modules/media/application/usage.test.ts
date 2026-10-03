@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import { mediaInUseMessage } from "./service.js";
 
 describe("mediaInUseMessage", () => {
+  it("explains why a homepage image cannot be deleted", () => {
+    expect(mediaInUseMessage([{ type: "homepage", id: "default", name: "Homepage", href: "/admin/homepage" }])).toBe("Essa imagem ainda está sendo usada em homepage.");
+  });
   it("names the products still using the image", () => {
     expect(
       mediaInUseMessage([

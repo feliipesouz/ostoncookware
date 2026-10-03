@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { safeCtaUrlSchema } from "./url.js";
+import { campaignFocalSchema, campaignTextAlignSchema } from "./enums.js";
 
 const sectionBaseSchema = z.object({
   id: z.string().min(1).max(64),
@@ -15,6 +16,29 @@ const differentialItemSchema = z
 
 export const heroCampaignSectionSchema = sectionBaseSchema.extend({
   type: z.literal("hero_campaign"),
+});
+
+// Brand content belongs to the homepage, independently of a campaign's lifecycle.
+export const brandHeroSectionSchema = sectionBaseSchema.extend({
+  type: z.literal("BRAND_HERO"),
+  eyebrow: z.string().max(80),
+  title: z.string().trim().min(1).max(180),
+  subtitle: z.string().max(400),
+  desktopImageId: z.string().min(1).nullable().optional(),
+  mobileImageId: z.string().min(1).nullable().optional(),
+  imageAlt: z.string().trim().min(1).max(180),
+  primaryCtaLabel: z.string().trim().min(1).max(80),
+  primaryCtaUrl: safeCtaUrlSchema,
+  secondaryCtaLabel: z.string().max(80).optional(),
+  secondaryCtaUrl: safeCtaUrlSchema.optional(),
+  textAlign: campaignTextAlignSchema.default("left"),
+  focalPosition: campaignFocalSchema.default("center"),
+  overlay: z.number().int().min(0).max(80).default(42),
+});
+
+export const seasonalCampaignSectionSchema = sectionBaseSchema.extend({
+  type: z.literal("SEASONAL_CAMPAIGN"),
+  campaignId: z.string().min(1).nullable().optional(),
 });
 
 export const manifestoSectionSchema = sectionBaseSchema.extend({
@@ -125,6 +149,8 @@ export const commercialCtaBlockSchema = sectionBaseSchema.extend({
 });
 
 export const homepageSectionSchema = z.discriminatedUnion("type", [
+  brandHeroSectionSchema,
+  seasonalCampaignSectionSchema,
   heroCampaignSectionSchema,
   manifestoSectionSchema,
   featuredCollectionsSectionSchema,
@@ -141,12 +167,32 @@ export const homepageSectionSchema = z.discriminatedUnion("type", [
   commercialCtaBlockSchema,
 ]);
 
-export const homepageSectionsSchema = z.array(homepageSectionSchema).max(16);
+export const homepageSectionsSchema = z.array(homepageSectionSchema).max(20);
+
+const homepageWritableSectionsSchema = homepageSectionsSchema.superRefine((sections, ctx) => {
+  const ids = new Set<string>();
+  for (const [index, section] of sections.entries()) {
+    if (ids.has(section.id)) {
+      ctx.addIssue({ code: "custom", message: "Cada seção deve ter um identificador único.", path: [index, "id"] });
+    }
+    ids.add(section.id);
+    if (section.type === "BRAND_HERO" && Boolean(section.secondaryCtaLabel) !== Boolean(section.secondaryCtaUrl)) {
+      ctx.addIssue({ code: "custom", message: "Preencha o texto e o destino da chamada secundária.", path: [index, "secondaryCtaLabel"] });
+    }
+  }
+  if (sections.filter((section) => section.type === "BRAND_HERO").length > 1) {
+    ctx.addIssue({ code: "custom", message: "A homepage deve ter apenas um hero institucional." });
+  }
+  const seasonalSlots = sections.filter((section) => section.enabled && ["SEASONAL_CAMPAIGN", "HERO", "hero_campaign"].includes(section.type));
+  if (seasonalSlots.length > 1) {
+    ctx.addIssue({ code: "custom", message: "Mantenha apenas um espaço de campanha sazonal ativo." });
+  }
+});
 
 export const homepageWriteSchema = z
   .object({
-    sections: z.array(homepageSectionSchema).max(16),
-    expectedVersion: z.number().int().positive().optional(),
+    sections: homepageWritableSectionsSchema,
+    expectedVersion: z.number().int().positive(),
   })
   .strict();
 
@@ -161,25 +207,60 @@ export type HomepageSection = z.infer<typeof homepageSectionSchema>;
 export type HomepageWrite = z.infer<typeof homepageWriteSchema>;
 export type Homepage = z.infer<typeof homepageSchema>;
 
+export const defaultBrandHeroSection: z.infer<typeof brandHeroSectionSchema> = {
+  id: "brand-hero",
+  type: "BRAND_HERO",
+  enabled: true,
+  eyebrow: "OSTON · Cookware",
+  title: "O extraordinário começa à mesa.",
+  subtitle: "Conheça as coleções OSTON e encontre as peças que fazem parte do seu jeito de cozinhar.",
+  desktopImageId: null,
+  mobileImageId: null,
+  imageAlt: "O universo OSTON à mesa",
+  primaryCtaLabel: "Explorar coleções",
+  primaryCtaUrl: "/colecoes",
+  secondaryCtaLabel: "Conheça a OSTON",
+  secondaryCtaUrl: "/a-marca",
+  textAlign: "left",
+  focalPosition: "center",
+  overlay: 24,
+};
+
+/** Upgrade the read model without changing or discarding stored legacy sections. */
+export function withInstitutionalHero<T extends HomepageSection>(sections: T[]): (T | typeof defaultBrandHeroSection)[] {
+  if (sections.some((section) => section.type === "BRAND_HERO")) return sections;
+  const ids = new Set(sections.map((section) => section.id));
+  let id = defaultBrandHeroSection.id;
+  for (let suffix = 2; ids.has(id); suffix += 1) id = `${defaultBrandHeroSection.id}-${suffix}`;
+  return [{ ...defaultBrandHeroSection, id }, ...sections];
+}
+
+export function homepageMediaIds(sections: HomepageSection[]): string[] {
+  return [...new Set(sections.flatMap((section) => {
+    if (section.type === "BRAND_HERO") return [section.desktopImageId, section.mobileImageId].filter((id): id is string => Boolean(id));
+    return "imageId" in section && section.imageId ? [section.imageId] : [];
+  }))];
+}
+
 export const defaultHomepageSections: HomepageSection[] = [
-  { id: "hero", type: "hero_campaign", enabled: true },
-  {
-    id: "manifesto",
-    type: "manifesto",
-    enabled: true,
-    eyebrow: "A marca",
-    quote:
-      "Cozinhar é um gesto de presença. A OSTON existe para que esse gesto tenha silêncio, matéria e estilo.",
-    body: "Não vendemos pressa. Construímos uma marca de cookware contemporâneo, com atendimento consultivo e uma vitrine digital à altura da mesa que você imagina. O catálogo oficial entra no CMS sem reescrever o site.",
-  },
+  defaultBrandHeroSection,
+  { id: "seasonal-campaign", type: "SEASONAL_CAMPAIGN", enabled: true, campaignId: null },
   {
     id: "collections",
     type: "featured_collections",
     enabled: true,
     eyebrow: "Coleções",
-    title: "Presença à mesa",
+    title: "Encontre seu tom.",
     ctaLabel: "Ver todas",
     ctaHref: "/colecoes",
+  },
+  {
+    id: "manifesto",
+    type: "manifesto",
+    enabled: true,
+    eyebrow: "O prazer de estar presente",
+    quote: "Mais do que cozinhar. Estar presente.",
+    body: "A receita é só o começo. O que fica é o tempo à mesa, a conversa que se estende e o prazer de preparar algo para alguém. Descubra o universo OSTON.",
   },
   {
     id: "differentials",
@@ -189,20 +270,16 @@ export const defaultHomepageSections: HomepageSection[] = [
     title: "O que permanece quando a moda passa",
     items: [
       {
-        title: "Presença editorial",
-        text: "Uma marca pensada para ser vista com a mesma atenção de um objeto de design.",
+        title: "Encontre seu conjunto",
+        text: "Explore as coleções e escolha as peças para o seu dia a dia.",
       },
       {
-        title: "Atendimento consultivo",
-        text: "Conversamos sobre a sua cozinha. Sem checkout improvisado nesta versão.",
+        title: "Conheça cada detalhe",
+        text: "Consulte os itens e as características de cada conjunto antes de escolher.",
       },
       {
-        title: "Catálogo vivo",
-        text: "Coleções, campanhas e embaixador são substituídos no CMS, sem depender de desenvolvedor.",
-      },
-      {
-        title: "Conteúdo responsável",
-        text: "Enquanto o catálogo oficial não chega, nada aqui se apresenta como ficha técnica real.",
+        title: "Converse com a OSTON",
+        text: "Tire suas dúvidas sobre as coleções com o nosso atendimento.",
       },
     ],
   },
@@ -212,14 +289,14 @@ export const defaultHomepageSections: HomepageSection[] = [
     enabled: true,
     eyebrow: "À mesa",
     title: "A cozinha como território",
-    body: "Uma casa se revela na forma como recebe. A OSTON trata o cookware como objeto de convivência — visível, tátil, digno de permanecer. Este bloco é editorial e será alimentado com fotografia oficial.",
-    imagePath: "/demo/experience.svg",
-    imageAlt: "Composição demonstrativa da experiência OSTON à mesa",
+    body: "Da primeira escolha ao último encontro à mesa, a cozinha acompanha o seu jeito de viver.",
+    imagePath: "/editorial/culinary-atmosphere.webp",
+    imageAlt: "Ingredientes, ervas e linho sobre uma bancada de cozinha",
   },
   {
     id: "ambassador",
     type: "ambassador",
-    enabled: true,
+    enabled: false,
     eyebrow: "Embaixador",
     title: "Uma voz ainda em reserva",
     body: "A arquitetura do site já permite trocar imagem, vídeo, headline e coleção promovida. Nenhuma personalidade real é apresentada até haver autorização e assets oficiais.",
@@ -232,8 +309,8 @@ export const defaultHomepageSections: HomepageSection[] = [
     enabled: true,
     eyebrow: "Consultoria",
     title: "Conheça a coleção ideal para a sua cozinha",
-    body: "Atendimento humano, pelo canal que preferir. Sem carrinho nesta versão — o primeiro passo é uma conversa.",
-    primaryLabel: "WhatsApp",
+    body: "Conte como você gosta de cozinhar. Nós ajudamos você a conhecer as opções.",
+    primaryLabel: "Falar com a OSTON",
     primaryHref: "/contato",
     secondaryLabel: "Falar com consultor",
     secondaryHref: "/contato",

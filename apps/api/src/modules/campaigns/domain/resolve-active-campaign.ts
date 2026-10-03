@@ -1,6 +1,8 @@
 import type { ContentStatus } from "@oston/contracts";
 
 export type CampaignWindow = {
+  id?: string;
+  deletedAt?: Date | null;
   status: ContentStatus;
   startsAt: Date | null;
   endsAt: Date | null;
@@ -9,6 +11,7 @@ export type CampaignWindow = {
 };
 
 export function isCampaignLive(campaign: CampaignWindow, now = new Date()) {
+  if (campaign.deletedAt || (campaign.status === "SCHEDULED" && !campaign.startsAt)) return false;
   if (campaign.status === "DRAFT" || campaign.status === "ARCHIVED") {
     return false;
   }
@@ -21,7 +24,8 @@ export function isCampaignLive(campaign: CampaignWindow, now = new Date()) {
     return false;
   }
 
-  if (campaign.endsAt && campaign.endsAt.getTime() < now.getTime()) {
+  // A campaign is visible in [startsAt, endsAt); a handover never overlaps at its boundary.
+  if (campaign.endsAt && campaign.endsAt.getTime() <= now.getTime()) {
     return false;
   }
 
@@ -36,7 +40,7 @@ export function resolveActiveCampaign<T extends CampaignWindow>(campaigns: T[], 
         if (a.sortOrder !== b.sortOrder) {
           return a.sortOrder - b.sortOrder;
         }
-        return b.updatedAt.getTime() - a.updatedAt.getTime();
+        return b.updatedAt.getTime() - a.updatedAt.getTime() || (a.id ?? "").localeCompare(b.id ?? "");
       })[0] ?? null
   );
 }

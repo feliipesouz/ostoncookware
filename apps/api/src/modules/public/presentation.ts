@@ -1,10 +1,10 @@
 import type { FastifyInstance } from "fastify";
 import { defaultHomepageSections } from "@oston/contracts";
 import { sendProblem } from "../../lib/errors.js";
-import { getActiveCampaign, getCampaign } from "../campaigns/application/service.js";
+import { resolvePublicCampaign } from "../campaigns/application/resolve-public-campaign.js";
 import { listPublishedCollections } from "../collections/application/service.js";
 import { getActiveAnnouncement } from "../announcements/application/service.js";
-import { getHomepage, heroCampaignId } from "../homepage/application/service.js";
+import { getHomepage, seasonalCampaignSlot, withCampaignPreviewSlot } from "../homepage/application/service.js";
 import { getPublicNavigation } from "../navigation/application/service.js";
 import { listPublishedPageSummaries } from "../pages/application/service.js";
 import { getProductBySlug, listPublishedProducts } from "../products/application/service.js";
@@ -19,21 +19,7 @@ async function safe<T>(factory: () => Promise<T>, fallback: T): Promise<T> {
   }
 }
 
-async function resolvePublicCampaign(campaignId: string | null, preview = false) {
-  if (campaignId) {
-    try {
-      const selected = await getCampaign(campaignId);
-      if (preview || selected.status === "PUBLISHED") {
-        return selected;
-      }
-    } catch {
-      // use active campaign
-    }
-  }
-  return getActiveCampaign();
-}
-
-export async function assemblePublicSite(options?: { preview?: boolean }) {
+export async function assemblePublicSite(options?: { preview?: boolean; campaignId?: string }) {
   const [settings, homepage, navigation, announcement, collections, pages] = await Promise.all([
     getSettings(),
     safe(getHomepage, { id: "default", sections: defaultHomepageSections, version: 1, updatedAt: new Date(0) }),
@@ -44,14 +30,18 @@ export async function assemblePublicSite(options?: { preview?: boolean }) {
   ]);
 
   const featured = collections.filter((collection) => collection.featured).slice(0, 6);
-  const campaign = await resolvePublicCampaign(heroCampaignId(homepage.sections), options?.preview);
+  const slot = seasonalCampaignSlot(homepage.sections);
+  const previewCampaignId = options?.preview ? options.campaignId : undefined;
+  const campaign = slot.enabled || previewCampaignId
+    ? await resolvePublicCampaign(previewCampaignId ?? slot.campaignId, { preview: options?.preview })
+    : null;
 
   return {
     settings,
     campaign,
     collections: featured,
     homepage: {
-      sections: homepage.sections,
+      sections: previewCampaignId && campaign ? withCampaignPreviewSlot(homepage.sections) : homepage.sections,
       version: homepage.version,
     },
     navigation,

@@ -174,7 +174,7 @@ export function CampaignForm({ id, initial }: { id?: string; initial?: Record<st
     [form, recordId, router],
   );
 
-  useSaveHotkey(dirty, () => void save("DRAFT"));
+  useSaveHotkey(dirty, () => void save(form.status));
 
   async function reloadCurrent() {
     if (!recordId) return;
@@ -193,7 +193,7 @@ export function CampaignForm({ id, initial }: { id?: string; initial?: Record<st
       ) : null}
       {error ? <p className="text-sm text-danger">{error}</p> : null}
 
-      <FormSection title="Informações básicas" description="O nome interno não aparece no site. Headline e subtítulo são o hero.">
+      <FormSection title="Campanha sazonal" description="A campanha aparece em um espaço próprio abaixo da apresentação da marca. O nome interno não aparece no site.">
         <Field label="Nome interno">
           <input className={fieldClass} value={form.name} onChange={(e) => patch({ name: e.target.value })} />
         </Field>
@@ -299,12 +299,13 @@ export function CampaignForm({ id, initial }: { id?: string; initial?: Record<st
 
       <FormSection
         title="Agenda e publicação"
-        description="SCHEDULED só entra no ar entre início e fim. Sem data de início, a campanha não agenda de verdade."
+        description="Datas e horários usam o fuso deste dispositivo. A campanha começa no horário inicial e deixa de aparecer no horário final."
       >
         <div className="flex flex-wrap items-center gap-3">
           <StatusBadge status={form.status} />
           <span className="text-sm text-foreground-muted">versão {form.version}</span>
         </div>
+        <p className="text-sm text-foreground-muted">Salvar como rascunho retira a campanha do site. O preview mostra a versão salva, inclusive fora da agenda; a publicação respeita sempre as datas.</p>
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Status">
             <select className={fieldClass} value={form.status} onChange={(e) => patch({ status: e.target.value })}>
@@ -314,7 +315,7 @@ export function CampaignForm({ id, initial }: { id?: string; initial?: Record<st
               <option value="ARCHIVED">Arquivada</option>
             </select>
           </Field>
-          <Field label="Ordem">
+          <Field label="Prioridade (menor número primeiro)" hint="Em caso de empate, aparece a campanha atualizada mais recentemente.">
             <input type="number" min={0} className={fieldClass} value={form.sortOrder} onChange={(e) => patch({ sortOrder: Number(e.target.value) })} />
           </Field>
         </div>
