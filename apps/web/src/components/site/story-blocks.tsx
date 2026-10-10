@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { SiteImage } from "./site-image";
-import { consultationUrl } from "@/lib/consultation";
+import { consultationUrl, DEFAULT_CONSULTATION_MESSAGE } from "@/lib/consultation";
 import { consultantMessage, type Settings } from "@/lib/content";
 import { isSafeCtaUrl } from "@/lib/safe-url";
 import { CatalogDownload } from "./catalog-download";
@@ -98,7 +98,7 @@ export function CommercialCta({
 }) {
   const consultation = consultationUrl(
     settings.whatsapp,
-    consultantMessage(settings, "Olá, gostaria de conhecer as coleções OSTON."),
+    consultantMessage(settings, DEFAULT_CONSULTATION_MESSAGE),
   );
   const primary =
     primaryHref === "/contato" || !isSafeCtaUrl(primaryHref) ? consultation : primaryHref;

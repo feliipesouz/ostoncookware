@@ -67,7 +67,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const { settings } = site;
   const whatsapp = consultationUrl(
     settings.whatsapp,
-    "Olá, tenho interesse em " +
+    "Olá! Vim pelo site da OSTON e tenho interesse em " +
       product.name +
       ". Gostaria de conhecer as condições e a disponibilidade. " +
       absoluteUrl("/produtos/" + product.slug),

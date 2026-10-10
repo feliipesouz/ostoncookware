@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { NavigationItem, Settings } from "@/lib/content";
 import { consultantMessage } from "@/lib/content";
-import { consultationUrl } from "@/lib/consultation";
+import { consultationUrl, DEFAULT_CONSULTATION_MESSAGE } from "@/lib/consultation";
 import { isSafeCtaUrl } from "@/lib/safe-url";
 import { CatalogDownload } from "./catalog-download";
 import { ArrowIcon, ArrowUpRightIcon } from "./icons";
@@ -14,7 +14,7 @@ export function SiteFooter({ settings, items }: { settings: Settings; items?: Na
   const catalog = settings.catalogPdf?.url;
   const consultation = consultationUrl(
     settings.whatsapp,
-    consultantMessage(settings, "Olá, gostaria de conhecer os conjuntos OSTON."),
+    consultantMessage(settings, DEFAULT_CONSULTATION_MESSAGE),
   );
   return (
     <footer className="site-footer">

@@ -5,6 +5,9 @@ import type { Media } from "@/lib/content";
 import { mediaSrc } from "@/lib/api";
 import { SiteImage } from "./site-image";
 
+// The leading cover is editorial photography; following images can be technical sheets.
+const coverPhotoClass = "object-cover object-[center_55%]";
+
 export function ProductGallery({ images, name, demo = false }: { images: Media[]; name: string; demo?: boolean }) {
   const [selected, setSelected] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
@@ -29,14 +32,14 @@ export function ProductGallery({ images, name, demo = false }: { images: Media[]
 
   return (
     <section aria-label={"Galeria de " + name}>
-      <div className="relative aspect-[5/6] overflow-hidden bg-surface">
+      <div className="relative aspect-[4/5] overflow-hidden bg-surface">
         <SiteImage
           src={mediaSrc(current.url)}
           alt={current.alt || name}
           fill
           preload={selected === 0}
           sizes="(max-width: 767px) 100vw, 55vw"
-          className="object-contain"
+          className={selected === 0 ? coverPhotoClass : "object-contain"}
         />
         {demo ? <span className="absolute top-5 left-5 bg-background/95 px-3 py-2 text-[0.65rem] tracking-[0.18em] uppercase">Imagem demonstrativa</span> : null}
         <button
@@ -73,7 +76,7 @@ export function ProductGallery({ images, name, demo = false }: { images: Media[]
               onClick={() => setSelected(index)}
               className={"relative h-20 w-20 shrink-0 border-2 bg-surface transition-colors " + (selected === index ? "border-brand" : "border-transparent hover:border-border-strong")}
             >
-              <SiteImage src={mediaSrc(image.url)} alt="" fill sizes="80px" className="object-contain" />
+              <SiteImage src={mediaSrc(image.url)} alt="" fill sizes="80px" className={index === 0 ? coverPhotoClass : "object-contain"} />
             </button>
           ))}
         </div>

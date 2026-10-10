@@ -59,7 +59,7 @@ export default async function CollectionPage({ params }: { params: Promise<{ slu
   // Keep this temporary so the collection can grow into a multi-product page.
   const singleProduct = products.length === 1 ? products[0] : undefined;
   if (singleProduct) redirect("/produtos/" + singleProduct.slug);
-  const contact = consultationUrl(site.settings.whatsapp, "Olá, tenho interesse na coleção " + collection.name + ". Gostaria de conhecer os conjuntos e as condições. " + absoluteUrl("/colecoes/" + collection.slug));
+  const contact = consultationUrl(site.settings.whatsapp, "Olá! Vim pelo site da OSTON e tenho interesse na coleção " + collection.name + ". Gostaria de conhecer os conjuntos e as condições. " + absoluteUrl("/colecoes/" + collection.slug));
   const otherCollections = collections.filter((item) => item.id !== collection.id).slice(0, 5);
   const breadcrumb = jsonLd(breadcrumbData([
     { name: "Início", path: "/" },
