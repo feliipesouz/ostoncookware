@@ -6,6 +6,8 @@ import { Fragment } from "react";
 import { CampaignHero } from "./campaign-hero";
 import { SeasonalCampaign } from "./seasonal-campaign";
 import { FeaturedCollections } from "./featured-collections";
+import { SetComposition } from "./set-composition";
+import { PurchaseGuide } from "./purchase-guide";
 import { Differentials, Manifesto } from "./manifesto";
 import { AmbassadorSlot, CommercialCta, ExperienceBlock } from "./story-blocks";
 
@@ -107,6 +109,19 @@ export function HomepageSections({
                 subtitle={section.eyebrow}
               />
             );
+          case "SET_COMPOSITION":
+            return (
+              <SetComposition
+                key={section.id}
+                {...section}
+                imageUrl={
+                  section.image ? mediaSrc(section.image.url) : mediaSrc(section.imagePath ?? "")
+                }
+                imageAlt={section.image?.alt ?? section.imageAlt}
+              />
+            );
+          case "PURCHASE_GUIDE":
+            return <PurchaseGuide key={section.id} {...section} />;
           case "FEATURE_HIGHLIGHTS":
             return <Differentials key={section.id} title={section.title} items={section.items} />;
           case "differentials":
