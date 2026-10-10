@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { SiteImage } from "./site-image";
-import { whatsappLink } from "@/lib/api";
+import { consultationUrl } from "@/lib/consultation";
 import { consultantMessage, type Settings } from "@/lib/content";
 import { isSafeCtaUrl } from "@/lib/safe-url";
 import { CatalogDownload } from "./catalog-download";
@@ -96,13 +96,14 @@ export function CommercialCta({
   secondaryLabel: string;
   secondaryHref: string;
 }) {
+  const consultation = consultationUrl(
+    settings.whatsapp,
+    consultantMessage(settings, "Olá, gostaria de conhecer as coleções OSTON."),
+  );
   const primary =
-    primaryHref === "/contato" && settings.whatsapp
-      ? whatsappLink(
-          settings.whatsapp,
-          consultantMessage(settings, "Olá, gostaria de conhecer as coleções OSTON."),
-        )
-      : primaryHref;
+    primaryHref === "/contato" || !isSafeCtaUrl(primaryHref) ? consultation : primaryHref;
+  const secondary =
+    secondaryHref === "/contato" || !isSafeCtaUrl(secondaryHref) ? consultation : secondaryHref;
   const catalog = settings.catalogPdf?.url;
   return (
     <section className="commercial-section">
@@ -115,13 +116,20 @@ export function CommercialCta({
           <h2 className="display-title">{headline}</h2>
           <p className="editorial-copy">{body}</p>
           <div className="commercial-actions">
-            <Link href={isSafeCtaUrl(primary) ? primary : "/contato"} className="button-primary">
-              {primary === "/contato" && /whatsapp/i.test(primaryLabel) ? "Falar com a OSTON" : primaryLabel}
+            <Link
+              href={primary}
+              target={primary.startsWith("https://wa.me/") ? "_blank" : undefined}
+              rel={primary.startsWith("https://wa.me/") ? "noopener noreferrer" : undefined}
+              className="button-primary"
+            >
+              {primary === consultation ? "Falar com consultor" : primaryLabel}
               <ArrowUpRightIcon />
             </Link>
-            {secondaryLabel && secondaryHref !== primaryHref ? (
+            {secondaryLabel && secondary !== primary ? (
               <Link
-                href={isSafeCtaUrl(secondaryHref) ? secondaryHref : "/contato"}
+                href={secondary}
+                target={secondary.startsWith("https://wa.me/") ? "_blank" : undefined}
+                rel={secondary.startsWith("https://wa.me/") ? "noopener noreferrer" : undefined}
                 className="button-secondary"
               >
                 {secondaryLabel}

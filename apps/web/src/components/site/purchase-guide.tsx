@@ -38,7 +38,12 @@ export function PurchaseGuide({
           </div>
           <div className="purchase-intro">
             <p className="editorial-copy">{body}</p>
-            <Link href={isSafeCtaUrl(ctaHref) ? ctaHref : "/contato"} className="button-link">
+            <Link
+              href={isSafeCtaUrl(ctaHref) ? ctaHref : "/contato"}
+              target={ctaHref.startsWith("https://wa.me/") ? "_blank" : undefined}
+              rel={ctaHref.startsWith("https://wa.me/") ? "noopener noreferrer" : undefined}
+              className="button-link"
+            >
               {ctaLabel}
               <ArrowUpRightIcon />
             </Link>

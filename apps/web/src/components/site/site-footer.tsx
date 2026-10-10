@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { NavigationItem, Settings } from "@/lib/content";
 import { consultantMessage } from "@/lib/content";
-import { whatsappLink } from "@/lib/api";
+import { consultationUrl } from "@/lib/consultation";
 import { isSafeCtaUrl } from "@/lib/safe-url";
 import { CatalogDownload } from "./catalog-download";
 import { ArrowIcon, ArrowUpRightIcon } from "./icons";
@@ -12,15 +12,19 @@ export function SiteFooter({ settings, items }: { settings: Settings; items?: Na
     .filter((item) => item.enabled && !item.parentId && isSafeCtaUrl(item.href))
     .sort((left, right) => left.sortOrder - right.sortOrder);
   const catalog = settings.catalogPdf?.url;
+  const consultation = consultationUrl(
+    settings.whatsapp,
+    consultantMessage(settings, "Olá, gostaria de conhecer os conjuntos OSTON."),
+  );
   return (
     <footer className="site-footer">
       <div className="site-grid">
         <div className="footer-topline">
           <p>À mesa. Na sua história.</p>
-          <Link href="/contato" className="button-link">
-            Vamos conversar
+          <a href={consultation} target="_blank" rel="noopener noreferrer" className="button-link">
+            Falar com consultor
             <ArrowUpRightIcon />
-          </Link>
+          </a>
         </div>
         <div className="footer-details">
           <p className="footer-about">
@@ -51,18 +55,11 @@ export function SiteFooter({ settings, items }: { settings: Settings; items?: Na
               <li>
                 <Link href="/colecoes">Encontre seu conjunto</Link>
               </li>
-              {settings.whatsapp ? (
-                <li>
-                  <a
-                    href={whatsappLink(
-                      settings.whatsapp,
-                      consultantMessage(settings, "Olá, gostaria de conhecer a OSTON."),
-                    )}
-                  >
-                    WhatsApp
-                  </a>
-                </li>
-              ) : null}
+              <li>
+                <a href={consultation} target="_blank" rel="noopener noreferrer">
+                  WhatsApp ↗
+                </a>
+              </li>
               {settings.email ? (
                 <li>
                   <a href={`mailto:${settings.email}`}>{settings.email}</a>

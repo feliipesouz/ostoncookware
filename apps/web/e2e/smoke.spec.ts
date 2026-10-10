@@ -28,12 +28,11 @@ test("contato abre", async ({ page }) => {
   await expect(page.locator("h1")).toBeVisible();
 });
 
-test("lead inválido é rejeitado", async ({ page }) => {
-  await page.goto("/contato");
-  await page.locator('input[name="name"]').fill("A");
-  await page.locator('input[name="phone"]').fill("1");
-  await page.getByRole("button", { name: /enviar/i }).click();
-  await expect(page.getByText(/não foi possível enviar/i)).toBeVisible({ timeout: 15_000 });
+test("lead inválido continua rejeitado pela API", async ({ request }) => {
+  const response = await request.post(`${api}/v1/public/leads`, {
+    data: { name: "A", phone: "1", interest: "CONSULTANT", source: "e2e" },
+  });
+  expect(response.status()).toBe(400);
 });
 
 test("lead válido é enviado", async ({ request }) => {

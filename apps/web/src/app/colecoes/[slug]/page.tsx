@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { PublicChrome } from "@/components/site/public-chrome";
 import { ProductExplorer } from "@/components/site/catalogue-browser";
 import { SiteImage } from "@/components/site/site-image";
 import { ApiError, mediaSrc } from "@/lib/api";
-import { consultationPath } from "@/lib/catalog";
+import { consultationUrl } from "@/lib/consultation";
 import { getCollectionPage, getCollections, getPublicSiteSafe, isDraftEnabled } from "@/lib/content";
-import { breadcrumbData, canonicalPath, jsonLd, siteMetadata } from "@/lib/seo";
+import { absoluteUrl, breadcrumbData, canonicalPath, jsonLd, siteMetadata } from "@/lib/seo";
 
 export const revalidate = 60;
 
@@ -29,6 +29,16 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params;
   const [site, page, draft] = await Promise.all([getPublicSiteSafe(), loadCollection(slug), isDraftEnabled()]);
   if (!page) return { title: "Coleção não encontrada", robots: { index: false, follow: false } };
+  const product = page.products.length === 1 ? page.products[0] : undefined;
+  if (product) {
+    return siteMetadata(site.settings, {
+      title: product.seoTitle ?? product.name,
+      description: product.seoDescription ?? product.shortDescription ?? undefined,
+      path: canonicalPath(product.canonicalPath, "/produtos/" + product.slug),
+      image: product.ogImage?.url ?? product.coverImage?.url,
+      noindex: draft || product.isDemo,
+    });
+  }
   return siteMetadata(site.settings, {
     title: page.collection.seoTitle ?? page.collection.name,
     description: page.collection.seoDescription ?? page.collection.shortDescription ?? undefined,
@@ -45,7 +55,11 @@ export default async function CollectionPage({ params }: { params: Promise<{ slu
   ]);
   if (!page) notFound();
   const { collection, products } = page;
-  const contact = consultationPath({ collectionSlug: collection.slug });
+  // A single set already has its complete presentation on the product page.
+  // Keep this temporary so the collection can grow into a multi-product page.
+  const singleProduct = products.length === 1 ? products[0] : undefined;
+  if (singleProduct) redirect("/produtos/" + singleProduct.slug);
+  const contact = consultationUrl(site.settings.whatsapp, "Olá, tenho interesse na coleção " + collection.name + ". Gostaria de conhecer os conjuntos e as condições. " + absoluteUrl("/colecoes/" + collection.slug));
   const otherCollections = collections.filter((item) => item.id !== collection.id).slice(0, 5);
   const breadcrumb = jsonLd(breadcrumbData([
     { name: "Início", path: "/" },
@@ -68,7 +82,7 @@ export default async function CollectionPage({ params }: { params: Promise<{ slu
               {collection.shortDescription ? <p className="editorial-copy mt-6 max-w-lg">{collection.shortDescription}</p> : null}
               <div className="mt-9 flex flex-wrap gap-3">
                 <a href="#produtos" className="button-primary">Explorar o conjunto <span aria-hidden="true">↓</span></a>
-                <Link href={contact} className="button-secondary">Consultar coleção <span aria-hidden="true">↗</span></Link>
+                <a href={contact} target="_blank" rel="noopener noreferrer" className="button-secondary">Falar com consultor <span aria-hidden="true">↗</span></a>
               </div>
               {collection.description ? <p className="mt-9 max-w-xl border-t border-border pt-7 text-sm leading-8 whitespace-pre-line text-foreground-muted">{collection.description}</p> : null}
             </div>
@@ -83,7 +97,7 @@ export default async function CollectionPage({ params }: { params: Promise<{ slu
               <section id="produtos" className="border-y border-border py-12">
                 <h2 className="font-display text-3xl">Conheça esta coleção com a nossa equipe.</h2>
                 <p className="mt-3 text-sm text-foreground-muted">Consulte os produtos e as condições de atendimento.</p>
-                <Link href={contact} className="button-link mt-6">Solicitar informações <span aria-hidden="true">↗</span></Link>
+                <a href={contact} target="_blank" rel="noopener noreferrer" className="button-link mt-6">Falar com consultor <span aria-hidden="true">↗</span></a>
               </section>
             )}
             {otherCollections.length ? (
