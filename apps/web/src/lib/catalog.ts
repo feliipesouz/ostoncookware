@@ -60,7 +60,7 @@ export function consultationContext(product: Product | null, collection: Collect
       collectionId: product.collectionId,
       collectionName: product.collectionName ?? collection?.name,
       productName: product.name,
-      message: "Tenho interesse em " + product.name + ". Gostaria de conhecer as condições e a disponibilidade.",
+      message: "Olá! Vim pelo site da OSTON e tenho interesse em " + product.name + ". Gostaria de conhecer as condições e a disponibilidade.",
       source: "product-consultation",
       path: "/produtos/" + product.slug,
     };
@@ -69,7 +69,7 @@ export function consultationContext(product: Product | null, collection: Collect
     return {
       collectionId: collection.id,
       collectionName: collection.name,
-      message: "Gostaria de saber mais sobre a coleção " + collection.name + ".",
+      message: "Olá! Vim pelo site da OSTON e gostaria de saber mais sobre a coleção " + collection.name + ".",
       source: "collection-consultation",
       path: "/colecoes/" + collection.slug,
     };

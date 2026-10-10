@@ -38,7 +38,7 @@ async function consultantDestination(page: Page, request: APIRequestContext) {
   const destination = new URL((await link.getAttribute("href"))!);
   expect(destination.origin).toBe("https://wa.me");
   expect(destination.pathname).toBe("/" + expectedPhone);
-  expect(destination.searchParams.get("text")).toBeTruthy();
+  expect(destination.searchParams.get("text")).toContain("Vim pelo site da OSTON");
   return destination;
 }
 
@@ -68,8 +68,12 @@ test("produto expõe galeria, composição e consulta com contexto", async ({ pa
   if (product.itemsIncluded.length) {
     await expect(page.locator("details li").filter({ hasText: product.itemsIncluded[0]! })).toBeVisible();
   }
+  const gallery = page.getByRole("region", { name: "Galeria de " + product.name });
+  const mainImage = gallery.locator(":scope > div").first().locator("img");
+  await expect(mainImage).toHaveCSS("object-fit", "cover");
   await page.getByRole("button", { name: "Ampliar imagem de " + product.name }).click();
   await expect(page.getByRole("dialog")).toBeVisible();
+  await expect(page.getByRole("dialog").locator("img")).toHaveCSS("object-fit", "contain");
   await expect(page.locator("body")).toHaveCSS("overflow", "hidden");
   await page.keyboard.press("Escape");
   await expect(page.getByRole("dialog")).not.toBeVisible();
@@ -78,6 +82,7 @@ test("produto expõe galeria, composição e consulta com contexto", async ({ pa
     const next = page.getByRole("button", { name: "Ver imagem 2 de " + product.name });
     await next.click();
     await expect(next).toHaveAttribute("aria-pressed", "true");
+    await expect(mainImage).toHaveCSS("object-fit", "contain");
   }
   const destination = await consultantDestination(page, request);
   expect(destination.searchParams.get("text")).toContain(product.name);

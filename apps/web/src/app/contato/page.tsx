@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { PublicChrome } from "@/components/site/public-chrome";
-import { consultationUrl } from "@/lib/consultation";
+import { consultationUrl, DEFAULT_CONSULTATION_MESSAGE } from "@/lib/consultation";
 import { ArrowUpRightIcon } from "@/components/site/icons";
 import { consultationContext } from "@/lib/catalog";
 import {
@@ -50,7 +50,7 @@ export default async function ContactPage({
   const context = consultationContext(product, collection);
   const message = context.message
     ? `${context.message} ${absoluteUrl(context.path)}`
-    : consultantMessage(site.settings, "Olá, gostaria de conhecer os conjuntos OSTON.");
+    : consultantMessage(site.settings, DEFAULT_CONSULTATION_MESSAGE);
   const whatsapp = consultationUrl(site.settings.whatsapp, message);
   const selectedName = context.productName || context.collectionName;
 
