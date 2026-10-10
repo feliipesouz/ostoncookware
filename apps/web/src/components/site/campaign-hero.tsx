@@ -5,6 +5,7 @@ import type { Campaign } from "@/lib/content";
 import { mediaSrc } from "@/lib/api";
 import { isSafeCtaUrl } from "@/lib/safe-url";
 import { ArrowIcon, ArrowUpRightIcon } from "./icons";
+import { GeometryMark } from "./geometry-mark";
 import { MotionSurface } from "./motion-surface";
 
 const atmosphere = "/editorial/culinary-atmosphere.webp";
@@ -24,7 +25,7 @@ export function CampaignHero({ campaign }: { campaign: Campaign }) {
   const alt = campaign.desktopImage
     ? campaign.imageAlt
     : "Composição editorial de ingredientes, ervas e linho sobre uma bancada";
-  const sizes = productHero ? "(max-width: 767px) 100vw, 52vw" : "100vw";
+  const sizes = productHero ? "(max-width: 767px) 100vw, 62vw" : "100vw";
   const { props: desktopProps } = getImageProps({
     src: desktop,
     alt,
@@ -74,6 +75,7 @@ export function CampaignHero({ campaign }: { campaign: Campaign }) {
             } as CSSProperties
           }
         />
+        {productHero ? <GeometryMark className="hero-geometry" /> : null}
         <div className="site-grid hero-layout">
           <div className="hero-topline" aria-hidden="true">
             <span>O prazer de cozinhar.</span>

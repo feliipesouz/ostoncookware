@@ -45,6 +45,12 @@ export function SiteFooter({ settings, items }: { settings: Settings; items?: Na
           <div>
             <p className="eyebrow">Perto de você</p>
             <ul>
+              <li>
+                <Link href="/contato">Atendimento e dúvidas</Link>
+              </li>
+              <li>
+                <Link href="/colecoes">Encontre seu conjunto</Link>
+              </li>
               {settings.whatsapp ? (
                 <li>
                   <a

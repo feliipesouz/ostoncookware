@@ -64,7 +64,15 @@
   --ease-editorial: cubic-bezier(0.22, 1, 0.36, 1);
   --duration-reveal: 700ms;
   --duration-interaction: 220ms;
-  --space-section: clamp(4.5rem, 9vw, 9rem);
+  /* Fibonacci rhythm: practical spacing steps, fluid between breakpoints. */
+  --space-1: 0.5rem;
+  --space-2: 0.8125rem;
+  --space-3: 1.3125rem;
+  --space-4: 2.125rem;
+  --space-5: 3.4375rem;
+  --space-6: 5.5625rem;
+  --space-section: clamp(var(--space-4), 4.8vw, var(--space-6));
+  --space-editorial: clamp(var(--space-4), 4vw, var(--space-5));
 
   /* Type — stacks are the source of truth. @theme cannot reuse the same
      custom-property name or :root becomes a cycle and font-family goes invalid. */
