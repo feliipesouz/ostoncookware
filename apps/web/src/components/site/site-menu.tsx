@@ -32,10 +32,12 @@ export function SiteMenu({
   items,
   catalog,
   brandName,
+  consultationHref,
 }: {
   items: NavigationItem[];
   catalog?: string;
   brandName: string;
+  consultationHref: string;
 }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -105,7 +107,7 @@ export function SiteMenu({
                 onClick={close}
                 aria-current={activePath(pathname, item.href) ? "page" : undefined}
               >
-                <span className="editorial-number">{String(index + 1).padStart(2, "0")}</span>
+                <span className="editorial-number" aria-hidden="true">{String(index + 1).padStart(2, "0")}</span>
                 <span>{item.label}</span>
                 <ArrowUpRightIcon />
               </Link>
@@ -113,9 +115,15 @@ export function SiteMenu({
           </nav>
           <div className="site-menu-contact">
             <p className="editorial-copy">Uma conversa para encontrar o seu jeito de cozinhar.</p>
-            <Link href="/contato" className="button-primary" onClick={close}>
-              Falar com a OSTON <ArrowUpRightIcon />
-            </Link>
+            <a
+              href={consultationHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="button-primary"
+              onClick={close}
+            >
+              Falar com consultor <ArrowUpRightIcon />
+            </a>
             {catalog ? <CatalogDownload href={catalog} className="button-link" /> : null}
           </div>
           <p className="site-menu-signature">O prazer de estar presente.</p>

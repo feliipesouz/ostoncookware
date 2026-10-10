@@ -1,4 +1,4 @@
-import { expect, test, type APIRequestContext } from "@playwright/test";
+import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
 
 type Collection = { id: string; name: string; slug: string };
 type Product = {
@@ -20,9 +20,26 @@ async function firstProduct(request: APIRequestContext) {
     const response = await request.get("/v1/public/collections/" + collection.slug);
     expect(response.ok()).toBeTruthy();
     const { data } = await response.json();
-    if (data.products.length > 0) return { product: data.products[0] as Product, collection };
+    if (data.products.length > 0) return { product: data.products[0] as Product, collection, productCount: data.products.length as number };
   }
   throw new Error("O catálogo de teste deve conter ao menos um produto publicado.");
+}
+
+async function consultantDestination(page: Page, request: APIRequestContext) {
+  const response = await request.get("/v1/public/site");
+  expect(response.ok()).toBeTruthy();
+  const { data } = await response.json();
+  const configured = (data.settings.whatsapp ?? "").replace(/\D/g, "");
+  const expectedPhone = /^\d{10,15}$/.test(configured) ? configured : "5511994520877";
+  const link = page.getByRole("main").getByRole("link", { name: "Falar com consultor", exact: true });
+  await expect(link).toBeVisible();
+  await expect(link).toHaveAttribute("target", "_blank");
+  await expect(link).toHaveAttribute("rel", /noopener/);
+  const destination = new URL((await link.getAttribute("href"))!);
+  expect(destination.origin).toBe("https://wa.me");
+  expect(destination.pathname).toBe("/" + expectedPhone);
+  expect(destination.searchParams.get("text")).toBeTruthy();
+  return destination;
 }
 
 test("catálogo permite busca sem acento e comparação de até três coleções", async ({ page, request }) => {
@@ -45,7 +62,7 @@ test("catálogo permite busca sem acento e comparação de até três coleções
 });
 
 test("produto expõe galeria, composição e consulta com contexto", async ({ page, request }) => {
-  const { product, collection } = await firstProduct(request);
+  const { product } = await firstProduct(request);
   await page.goto("/produtos/" + product.slug);
   await expect(page.getByRole("heading", { level: 1, name: product.name })).toBeVisible();
   if (product.itemsIncluded.length) {
@@ -62,28 +79,18 @@ test("produto expõe galeria, composição e consulta com contexto", async ({ pa
     await next.click();
     await expect(next).toHaveAttribute("aria-pressed", "true");
   }
-  await page.getByRole("link", { name: "Consultar este conjunto" }).click();
-  await expect(page).toHaveURL(new RegExp("/contato\\?produto=" + product.slug));
-  await expect(page.locator('select[name="collectionId"]')).toHaveValue(collection.id);
-  expect(await page.locator('textarea[name="message"]').inputValue()).toContain(product.name);
+  const destination = await consultantDestination(page, request);
+  expect(destination.searchParams.get("text")).toContain(product.name);
+  expect(destination.searchParams.get("text")).toContain("/produtos/" + product.slug);
+  await expect(page.getByRole("main").locator('a[href^="/contato"]')).toHaveCount(0);
 });
 
-test("consulta sem e-mail nem UTM mantém o produto e é aceita pela API", async ({ page, request }) => {
+test("link antigo de consulta mantém o produto sem exigir formulário", async ({ page, request }) => {
   const { product } = await firstProduct(request);
   await page.goto("/contato?produto=" + product.slug);
-  await page.getByLabel("Nome *", { exact: true }).fill("Consulta E2E OSTON");
-  await page.getByLabel("Telefone com DDD *", { exact: true }).fill("11999998877");
-  const pending = page.waitForResponse((response) => response.url().includes("/v1/public/leads") && response.request().method() === "POST");
-  await page.getByRole("button", { name: "Enviar solicitação" }).click();
-  const response = await pending;
-  const body = response.request().postDataJSON();
-  expect(body.utmSource).toBeUndefined();
-  expect(body.email).toBe("");
-  expect(body.collectionId).toBe(product.collectionId);
-  expect(body.message).toContain(product.name);
-  expect(body.landingPage).toBe("/produtos/" + product.slug);
-  expect(response.status()).toBe(201);
-  await expect(page.getByText("Mensagem recebida", { exact: true })).toBeVisible();
+  await expect(page.getByRole("main").locator("form")).toHaveCount(0);
+  const destination = await consultantDestination(page, request);
+  expect(destination.searchParams.get("text")).toContain(product.name);
 });
 
 test("produto sob consulta não inventa preço ou avaliações em JSON-LD", async ({ page, request }) => {
@@ -102,35 +109,36 @@ test("produto sob consulta não inventa preço ou avaliações em JSON-LD", asyn
   if (product.isDemo) await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex/);
 });
 
-test("falha no envio mantém os dados e permite tentar novamente", async ({ page }) => {
-  await page.route("**/v1/public/leads", (route) => route.fulfill({ status: 503, contentType: "application/json", body: '{"title":"Serviço indisponível"}' }));
-  await page.goto("/contato");
-  await page.getByLabel("Nome *", { exact: true }).fill("Nome preservado");
-  await page.getByLabel("Telefone com DDD *", { exact: true }).fill("11999998877");
-  await page.getByRole("button", { name: "Enviar solicitação" }).click();
-  await expect(page.locator("form").getByRole("alert")).toContainText("Seus dados foram mantidos");
-  await expect(page.getByLabel("Nome *", { exact: true })).toHaveValue("Nome preservado");
-  await expect(page.getByRole("button", { name: "Enviar solicitação" })).toBeEnabled();
+test("atendimento geral abre o WhatsApp sem formulário ou contexto inventado", async ({ page, request }) => {
+  await page.goto("/contato?produto=produto-inexistente-e2e");
+  await expect(page.getByRole("main").locator("form")).toHaveCount(0);
+  const destination = await consultantDestination(page, request);
+  expect(destination.searchParams.get("text")).not.toContain("produto-inexistente-e2e");
 });
 
-test("campanha mantém atribuição ao navegar pelo catálogo até a consulta", async ({ page, request }) => {
-  const { product, collection } = await firstProduct(request);
-  await page.route("**/v1/public/leads", (route) => route.fulfill({ status: 201, contentType: "application/json", body: '{"ok":true}' }));
+test("coleção com um conjunto leva direto aos detalhes e ao consultor", async ({ page, request }) => {
+  const { product, collection, productCount } = await firstProduct(request);
+  expect(productCount, "O seed deve conter uma coleção com um único conjunto").toBe(1);
   await page.goto("/colecoes?utm_source=editorial&utm_medium=site&utm_campaign=colecao-2026");
   await page.locator('a[href="/colecoes/' + collection.slug + '"]').first().click();
-  await page.locator('a[href="/produtos/' + product.slug + '"]').first().click();
-  await page.getByRole("link", { name: "Consultar este conjunto" }).click();
-  await page.getByLabel("Nome *", { exact: true }).fill("Consulta de campanha");
-  await page.getByLabel("Telefone com DDD *", { exact: true }).fill("11999998877");
-  const pending = page.waitForRequest((request) => request.url().includes("/v1/public/leads") && request.method() === "POST");
-  await page.getByRole("button", { name: "Enviar solicitação" }).click();
-  const body = (await pending).postDataJSON();
-  expect(body).toMatchObject({
-    utmSource: "editorial",
-    utmMedium: "site",
-    utmCampaign: "colecao-2026",
-    landingPage: "/colecoes",
-    source: "product-consultation",
-  });
-  expect(body.message).toContain(product.name);
+  await expect(page).toHaveURL((url) => url.pathname === "/produtos/" + product.slug);
+  await expect(page.getByRole("heading", { level: 1, name: product.name })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Explorar o conjunto", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("main").locator('nav a[href="/colecoes/' + collection.slug + '"]')).toHaveCount(0);
+  const destination = await consultantDestination(page, request);
+  expect(destination.searchParams.get("text")).toContain(product.name);
+});
+
+test("coleção sem produto mantém sua página editorial", async ({ page, request }) => {
+  for (const collection of await catalogCollections(request)) {
+    const response = await request.get("/v1/public/collections/" + collection.slug);
+    expect(response.ok()).toBeTruthy();
+    const { data } = await response.json();
+    if (data.products.length !== 0) continue;
+    await page.goto("/colecoes/" + collection.slug);
+    await expect(page).toHaveURL((url) => url.pathname === "/colecoes/" + collection.slug);
+    await expect(page.getByRole("heading", { level: 1, name: collection.name })).toBeVisible();
+    return;
+  }
+  throw new Error("O seed deve conter uma coleção sem produtos para validar a página editorial.");
 });

@@ -1,5 +1,6 @@
 import type { Campaign, Collection, PublicHomepageSection, Settings } from "@/lib/content";
 import { fallbackCampaign } from "@/lib/content";
+import { consultationUrl } from "@/lib/consultation";
 import { mediaSrc } from "@/lib/api";
 import { withInstitutionalHero } from "@oston/contracts";
 import { Fragment } from "react";
@@ -121,7 +122,17 @@ export function HomepageSections({
               />
             );
           case "PURCHASE_GUIDE":
-            return <PurchaseGuide key={section.id} {...section} />;
+            return (
+              <PurchaseGuide
+                key={section.id}
+                {...section}
+                ctaHref={
+                  section.ctaHref === "/contato"
+                    ? consultationUrl(settings.whatsapp, settings.whatsappMessage ?? undefined)
+                    : section.ctaHref
+                }
+              />
+            );
           case "FEATURE_HIGHLIGHTS":
             return <Differentials key={section.id} title={section.title} items={section.items} />;
           case "differentials":

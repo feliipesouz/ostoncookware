@@ -108,7 +108,12 @@ export const navigationWriteSchema = z
           path: ["items", index, "parentId"],
         });
       }
-      if (item.parentId && item.id && rootIds.has(item.parentId) === false && !value.items.some((candidate) => candidate.id === item.parentId && !candidate.parentId)) {
+      if (
+        item.parentId &&
+        item.id &&
+        rootIds.has(item.parentId) === false &&
+        !value.items.some((candidate) => candidate.id === item.parentId && !candidate.parentId)
+      ) {
         ctx.addIssue({
           code: "custom",
           message: "Filhos só podem pertencer a um item de primeiro nível.",
@@ -119,9 +124,10 @@ export const navigationWriteSchema = z
   });
 
 export const defaultHeaderNavigation = [
-  { label: "A marca", href: "/a-marca", kind: "INTERNAL" as const, enabled: true, sortOrder: 0 },
-  { label: "Coleções", href: "/colecoes", kind: "INTERNAL" as const, enabled: true, sortOrder: 1 },
-  { label: "Contato", href: "/contato", kind: "INTERNAL" as const, enabled: true, sortOrder: 2 },
+  { label: "Home", href: "/", kind: "INTERNAL" as const, enabled: true, sortOrder: 0 },
+  { label: "A marca", href: "/a-marca", kind: "INTERNAL" as const, enabled: true, sortOrder: 1 },
+  { label: "Coleções", href: "/colecoes", kind: "INTERNAL" as const, enabled: true, sortOrder: 2 },
+  { label: "Contato", href: "/contato", kind: "INTERNAL" as const, enabled: true, sortOrder: 3 },
 ];
 
 export const defaultFooterNavigation = [

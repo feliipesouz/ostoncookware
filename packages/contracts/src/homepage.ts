@@ -379,7 +379,7 @@ export const defaultPurchaseGuideSection: z.infer<typeof purchaseGuideSectionSch
     {
       question: "Como consultar valores e condições?",
       answer:
-        "Escolha uma coleção ou um produto e envie seu interesse pelo formulário de contato. O atendimento da OSTON informa valores, disponibilidade e condições.",
+        "Escolha seu conjunto e fale com um consultor pelo WhatsApp. A equipe da OSTON informa valores, disponibilidade e condições, com orientação para a sua escolha.",
     },
   ],
   ctaLabel: "Falar com a OSTON",
