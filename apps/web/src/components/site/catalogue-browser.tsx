@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import type { Collection, Product } from "@/lib/content";
 import { mediaSrc } from "@/lib/api";
 import { availabilityLabel, formatCatalogPrice, normalizeCatalogSearch } from "@/lib/catalog";
+import { ProductPrice } from "./product-price";
 import { SiteImage } from "./site-image";
 
 export function CollectionExplorer({ collections }: { collections: Collection[] }) {
@@ -168,7 +169,6 @@ export function ProductExplorer({ products }: { products: Product[] }) {
 }
 
 export function ProductCard({ product }: { product: Product }) {
-  const price = product.isDemo ? null : formatCatalogPrice(product.price);
   const detail = product.details?.materials[0] || product.specifications[0]?.value;
   return (
     <Link href={"/produtos/" + product.slug} className="group block">
@@ -191,7 +191,7 @@ export function ProductCard({ product }: { product: Product }) {
       {product.shortDescription ? <p className="mt-3 text-sm leading-7 text-foreground-muted">{product.shortDescription}</p> : null}
       {detail && !product.isDemo ? <p className="mt-3 text-xs text-foreground-muted">{detail}</p> : null}
       <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
-        <p className="text-sm">{price ?? (product.isDemo ? "Conteúdo demonstrativo" : "Sob consulta")}</p>
+        <ProductPrice product={product} compact />
         <span className="text-[0.65rem] tracking-[0.16em] uppercase">Ver detalhes</span>
       </div>
       {!product.isDemo && product.availability !== "AVAILABLE" ? (

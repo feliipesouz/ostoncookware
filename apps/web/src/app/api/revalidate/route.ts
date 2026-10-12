@@ -16,6 +16,9 @@ const ALLOWED_TAGS = new Set([
   "announcements",
 ]);
 
+// Catalogue prices must never serve an expired promotion after a successful CMS save.
+const IMMEDIATE_TAGS = new Set(["products", "collections", "site"]);
+
 function secretsEqual(provided: string, expected: string) {
   const left = Buffer.from(provided);
   const right = Buffer.from(expected);
@@ -41,7 +44,7 @@ export async function POST(request: NextRequest) {
   }
 
   for (const tag of tags) {
-    revalidateTag(tag, "max");
+    revalidateTag(tag, IMMEDIATE_TAGS.has(tag) ? { expire: 0 } : "max");
   }
 
   return NextResponse.json({ ok: true, tags });

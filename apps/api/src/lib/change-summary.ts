@@ -9,6 +9,7 @@ const LABELS: Record<string, string> = {
   status: "status",
   featured: "destaque",
   price: "preço",
+  salePrice: "preço promocional",
   priceFrom: "preço a partir de",
   availability: "disponibilidade",
   collectionId: "coleção",

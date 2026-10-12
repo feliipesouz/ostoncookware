@@ -104,7 +104,12 @@ async function restoreRevision(
 
   if (entity === "product") {
     const current = await getProductById(id);
-    return updateProduct(id, productWriteSchema.parse({ ...payload, expectedVersion: expectedVersion ?? current.version }), user);
+    return updateProduct(id, productWriteSchema.parse({
+      ...payload,
+      // Snapshots from before promotional pricing represent products without a promotion.
+      salePrice: "salePrice" in payload ? payload.salePrice : null,
+      expectedVersion: expectedVersion ?? current.version,
+    }), user);
   }
   if (entity === "collection") {
     const current = await getCollectionById(id);

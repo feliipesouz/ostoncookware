@@ -19,6 +19,29 @@ export function formatCatalogPrice(value: string | null | undefined) {
       }).format(number);
 }
 
+/** Monetary calculations use integer cents; invalid promotions fall back to the regular price. */
+export function productPricing(product: Pick<Product, "price" | "salePrice" | "isDemo">) {
+  const cents = (value: string | null | undefined) => {
+    if (!value || !/^\d+(\.\d{1,2})?$/.test(value)) return null;
+    const [whole, fraction = ""] = value.split(".");
+    const amount = Number(whole) * 100 + Number(fraction.padEnd(2, "0"));
+    return Number.isSafeInteger(amount) && amount > 0 ? amount : null;
+  };
+  const regular = product.isDemo ? null : cents(product.price);
+  if (regular === null) return null;
+  const candidate = cents(product.salePrice);
+  const promotional = candidate !== null && candidate < regular;
+  const current = promotional ? candidate : regular;
+  const savings = regular - current;
+  return {
+    regular: (regular / 100).toFixed(2),
+    current: (current / 100).toFixed(2),
+    savings: (savings / 100).toFixed(2),
+    promotional,
+    discountPercent: Number(BigInt(savings) * 100n / BigInt(regular)),
+  };
+}
+
 export function productImages(product: Pick<Product, "coverImage" | "images">): Media[] {
   const seen = new Set<string>();
   return [product.coverImage, ...product.images].filter((image): image is Media => {

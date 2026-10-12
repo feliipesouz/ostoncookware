@@ -74,7 +74,7 @@ jobs:
           E2E_ADMIN_EMAIL: ci-owner@ostoncookware.com
           E2E_ADMIN_PASSWORD: CiPassword1234
         run: |
-          pnpm --filter @oston/web exec playwright test e2e/catalogue.spec.ts e2e/media-source.spec.ts e2e/runtime.spec.ts --workers=1 --output=test-results/catalogue
+          pnpm --filter @oston/web exec playwright test e2e/catalogue.spec.ts e2e/pricing.spec.ts e2e/media-source.spec.ts e2e/runtime.spec.ts --workers=1 --output=test-results/catalogue
           pnpm --filter @oston/web exec playwright test e2e/auth.spec.ts e2e/editorial.spec.ts e2e/preview.spec.ts --workers=1 --output=test-results/editorial
           pnpm --filter @oston/web exec playwright test e2e/smoke.spec.ts --workers=1 --output=test-results/smoke
       - name: Preserve failure traces

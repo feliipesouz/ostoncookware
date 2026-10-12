@@ -1,3 +1,4 @@
+import { ProductPrice } from "@/components/site/product-price";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -6,7 +7,7 @@ import { ProductGallery } from "@/components/site/product-gallery";
 import { RelatedCollections } from "@/components/site/related-collections";
 import { consultationUrl } from "@/lib/consultation";
 import { ApiError } from "@/lib/api";
-import { availabilityLabel, formatCatalogPrice, productImages } from "@/lib/catalog";
+import { availabilityLabel, productImages } from "@/lib/catalog";
 import {
   getCollections,
   getProduct,
@@ -72,7 +73,6 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       ". Gostaria de conhecer as condições e a disponibilidade. " +
       absoluteUrl("/produtos/" + product.slug),
   );
-  const price = product.isDemo ? null : formatCatalogPrice(product.price);
   const specs = productSpecifications(product);
   const details = product.details;
   const otherCollections = collections
@@ -150,7 +150,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                 </p>
               ) : null}
               <div className="mt-8 border-y border-border py-6">
-                <p className="font-display text-3xl">{price ?? "Sob consulta"}</p>
+                <ProductPrice product={product} />
                 <p className="mt-2 text-xs leading-6 text-foreground-muted">
                   {product.isDemo
                     ? "Apresentação demonstrativa. Consulte o catálogo oficial."
