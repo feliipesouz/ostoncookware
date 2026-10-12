@@ -3,8 +3,16 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { adminMutate, adminPut, AdminApiError, conflictActor, conflictAt, isVersionConflict } from "@/lib/admin-client";
+import {
+  adminMutate,
+  adminPut,
+  AdminApiError,
+  conflictActor,
+  conflictAt,
+  isVersionConflict,
+} from "@/lib/admin-client";
 import { slugify } from "@/lib/admin-format";
+import { formatCatalogPrice, productPricing } from "@/lib/catalog";
 import { NamedValueListEditor, StringListEditor } from "./list-editors";
 import { MediaPicker, MediaStrip, type PickedMedia } from "./media-picker";
 import { SeoPanel } from "./seo-panel";
@@ -28,6 +36,7 @@ type ProductState = {
   features: string[];
   itemsIncluded: string[];
   price: string;
+  salePrice: string;
   availability: string;
   featured: boolean;
   status: string;
@@ -55,7 +64,9 @@ function asMedia(value: unknown): PickedMedia | null {
 }
 
 export function hydrateProduct(data: Record<string, unknown>): ProductState {
-  const images = Array.isArray(data.images) ? data.images.map(asMedia).filter((item): item is PickedMedia => Boolean(item)) : [];
+  const images = Array.isArray(data.images)
+    ? data.images.map(asMedia).filter((item): item is PickedMedia => Boolean(item))
+    : [];
   const specs = Array.isArray(data.specifications)
     ? data.specifications.filter(
         (item): item is { label: string; value: string } =>
@@ -71,11 +82,14 @@ export function hydrateProduct(data: Record<string, unknown>): ProductState {
     description: String(data.description ?? ""),
     images,
     specifications: specs.map((item) => ({ label: String(item.label), value: String(item.value) })),
-    features: Array.isArray(data.features) ? data.features.filter((item): item is string => typeof item === "string") : [],
+    features: Array.isArray(data.features)
+      ? data.features.filter((item): item is string => typeof item === "string")
+      : [],
     itemsIncluded: Array.isArray(data.itemsIncluded)
       ? data.itemsIncluded.filter((item): item is string => typeof item === "string")
       : [],
     price: data.price == null ? "" : String(data.price),
+    salePrice: data.salePrice == null ? "" : String(data.salePrice),
     availability: String(data.availability ?? "AVAILABLE"),
     featured: Boolean(data.featured),
     status: String(data.status ?? "DRAFT"),
@@ -103,6 +117,7 @@ const emptyProduct: ProductState = {
   features: [],
   itemsIncluded: [],
   price: "",
+  salePrice: "",
   availability: "COMING_SOON",
   featured: false,
   status: "DRAFT",
@@ -130,6 +145,7 @@ function buildPayload(form: ProductState, status: string) {
     features: form.features.map((item) => item.trim()).filter(Boolean),
     itemsIncluded: form.itemsIncluded.map((item) => item.trim()).filter(Boolean),
     price: form.price.trim() || null,
+    salePrice: form.salePrice.trim() || null,
     availability: form.availability,
     featured: form.featured,
     status,
@@ -143,14 +159,36 @@ function buildPayload(form: ProductState, status: string) {
   };
 }
 
+function priceCents(value: string): number | null {
+  const normalized = value.trim();
+  if (!/^\d+(?:\.\d{1,2})?$/.test(normalized)) return null;
+  const cents = Math.round(Number(normalized) * 100);
+  return Number.isSafeInteger(cents) && cents > 0 ? cents : null;
+}
+
+function promotionError(price: string, salePrice: string): string | null {
+  if (!salePrice.trim()) return null;
+  const regular = priceCents(price);
+  const sale = priceCents(salePrice);
+  if (regular === null) return "Informe um preço normal maior que zero para cadastrar a promoção.";
+  if (sale === null)
+    return "Informe um preço promocional maior que zero, com até duas casas decimais.";
+  if (sale >= regular) return "O preço promocional deve ser menor que o preço normal.";
+  return null;
+}
+
 export function ProductForm({ id, initial }: { id?: string; initial?: Record<string, unknown> }) {
   const router = useRouter();
   const [form, setForm] = useState<ProductState>(initial ? hydrateProduct(initial) : emptyProduct);
-  const [baseline, setBaseline] = useState(() => JSON.stringify(initial ? hydrateProduct(initial) : emptyProduct));
+  const [baseline, setBaseline] = useState(() =>
+    JSON.stringify(initial ? hydrateProduct(initial) : emptyProduct),
+  );
   const [collections, setCollections] = useState<CollectionOption[]>([]);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
-  const [conflict, setConflict] = useState<{ actorName: string; updatedAt: string | null } | null>(null);
+  const [conflict, setConflict] = useState<{ actorName: string; updatedAt: string | null } | null>(
+    null,
+  );
   const [slugTouched, setSlugTouched] = useState(Boolean(initial?.slug));
   const [mediaOpen, setMediaOpen] = useState(false);
   const [recordId, setRecordId] = useState(id);
@@ -170,19 +208,31 @@ export function ProductForm({ id, initial }: { id?: string; initial?: Record<str
 
   const save = useCallback(
     async (status: string) => {
+      const invalidPromotion = promotionError(form.price, form.salePrice);
+      if (invalidPromotion) {
+        setError(invalidPromotion);
+        return;
+      }
       setSaving(true);
       setError("");
       setConflict(null);
       try {
         const payload = buildPayload(form, status);
         if (recordId) {
-          const result = await adminPut<{ data: Record<string, unknown> }>(`/v1/admin/products/${recordId}`, payload);
+          const result = await adminPut<{ data: Record<string, unknown> }>(
+            `/v1/admin/products/${recordId}`,
+            payload,
+          );
           const next = hydrateProduct(result.data);
           setForm(next);
           setBaseline(JSON.stringify(next));
           setRecordId(String(result.data.id ?? recordId));
         } else {
-          const result = await adminMutate<{ data: Record<string, unknown> }>("/v1/admin/products", "POST", payload);
+          const result = await adminMutate<{ data: Record<string, unknown> }>(
+            "/v1/admin/products",
+            "POST",
+            payload,
+          );
           const next = hydrateProduct(result.data);
           setForm(next);
           setBaseline(JSON.stringify(next));
@@ -193,7 +243,9 @@ export function ProductForm({ id, initial }: { id?: string; initial?: Record<str
         if (isVersionConflict(err)) {
           setConflict({ actorName: conflictActor(err), updatedAt: conflictAt(err) });
         } else {
-          setError(err instanceof AdminApiError ? err.message : "Não foi possível salvar o produto.");
+          setError(
+            err instanceof AdminApiError ? err.message : "Não foi possível salvar o produto.",
+          );
         }
       } finally {
         setSaving(false);
@@ -216,15 +268,28 @@ export function ProductForm({ id, initial }: { id?: string; initial?: Record<str
 
   const previewPath = `/produtos/${form.slug || "slug"}`;
   const missingAlt = form.images.some((item) => !item.alt);
+  const invalidPromotion = promotionError(form.price, form.salePrice);
+  const pricing = productPricing({
+    price: form.price || null,
+    salePrice: form.salePrice || null,
+    isDemo: false,
+  });
 
   return (
     <div className="grid max-w-4xl gap-6">
       {conflict ? (
-        <ConflictBanner actorName={conflict.actorName} updatedAt={conflict.updatedAt} onReload={() => void reloadCurrent()} />
+        <ConflictBanner
+          actorName={conflict.actorName}
+          updatedAt={conflict.updatedAt}
+          onReload={() => void reloadCurrent()}
+        />
       ) : null}
       {error ? <p className="text-sm text-danger">{error}</p> : null}
 
-      <FormSection title="Informações básicas" description="Nome e texto que o consultor e o site usam para apresentar a peça.">
+      <FormSection
+        title="Informações básicas"
+        description="Nome e texto que o consultor e o site usam para apresentar a peça."
+      >
         <Field label="Nome">
           <input
             data-testid="product-name"
@@ -247,14 +312,27 @@ export function ProductForm({ id, initial }: { id?: string; initial?: Record<str
           />
         </Field>
         <Field label="Resumo" hint="Uma ou duas frases. Aparece em cards e como fallback de SEO.">
-          <textarea className={fieldClass} rows={3} value={form.shortDescription} onChange={(e) => patch({ shortDescription: e.target.value })} />
+          <textarea
+            className={fieldClass}
+            rows={3}
+            value={form.shortDescription}
+            onChange={(e) => patch({ shortDescription: e.target.value })}
+          />
         </Field>
         <Field label="Descrição">
-          <textarea className={fieldClass} rows={8} value={form.description} onChange={(e) => patch({ description: e.target.value })} />
+          <textarea
+            className={fieldClass}
+            rows={8}
+            value={form.description}
+            onChange={(e) => patch({ description: e.target.value })}
+          />
         </Field>
       </FormSection>
 
-      <FormSection title="Mídia" description="A primeira imagem é a capa. Reordene para definir a galeria.">
+      <FormSection
+        title="Mídia"
+        description="A primeira imagem é a capa. Reordene para definir a galeria."
+      >
         <MediaStrip
           items={form.images}
           onRemove={(id) => patch({ images: form.images.filter((item) => item.id !== id) })}
@@ -275,9 +353,16 @@ export function ProductForm({ id, initial }: { id?: string; initial?: Record<str
         />
       </FormSection>
 
-      <FormSection title="Coleção" description="Todo produto pertence a uma coleção publicada ou em rascunho.">
+      <FormSection
+        title="Coleção"
+        description="Todo produto pertence a uma coleção publicada ou em rascunho."
+      >
         <Field label="Coleção">
-          <select className={fieldClass} value={form.collectionId} onChange={(e) => patch({ collectionId: e.target.value })}>
+          <select
+            className={fieldClass}
+            value={form.collectionId}
+            onChange={(e) => patch({ collectionId: e.target.value })}
+          >
             <option value="">Selecione</option>
             {collections.map((item) => (
               <option key={item.id} value={item.id}>
@@ -288,26 +373,84 @@ export function ProductForm({ id, initial }: { id?: string; initial?: Record<str
         </Field>
       </FormSection>
 
-      <FormSection title="Diferenciais" description="Frases curtas sobre o que distingue esta peça. Não invente ficha técnica se o catálogo oficial ainda não chegou.">
-        <StringListEditor items={form.features} onChange={(features) => patch({ features })} addLabel="Adicionar diferencial" placeholder="Ex.: Cabo forjado, equilíbrio na mão" />
+      <FormSection
+        title="Diferenciais"
+        description="Frases curtas sobre o que distingue esta peça. Não invente ficha técnica se o catálogo oficial ainda não chegou."
+      >
+        <StringListEditor
+          items={form.features}
+          onChange={(features) => patch({ features })}
+          addLabel="Adicionar diferencial"
+          placeholder="Ex.: Cabo forjado, equilíbrio na mão"
+        />
       </FormSection>
 
-      <FormSection title="Especificações" description="Pares rótulo/valor. Só o que for oficial — nada de dados demonstrativos hardcoded.">
-        <NamedValueListEditor items={form.specifications} onChange={(specifications) => patch({ specifications })} />
+      <FormSection
+        title="Especificações"
+        description="Pares rótulo/valor. Só o que for oficial — nada de dados demonstrativos hardcoded."
+      >
+        <NamedValueListEditor
+          items={form.specifications}
+          onChange={(specifications) => patch({ specifications })}
+        />
       </FormSection>
 
-      <FormSection title="Comercial" description="Preço, SKU e disponibilidade para o consultor. O site não tem checkout nesta versão.">
+      <FormSection
+        title="Comercial"
+        description="Preço, SKU e disponibilidade para o consultor. O site não tem checkout nesta versão."
+      >
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="SKU">
-            <input className={fieldClass} value={form.sku} onChange={(e) => patch({ sku: e.target.value })} />
+            <input
+              className={fieldClass}
+              value={form.sku}
+              onChange={(e) => patch({ sku: e.target.value })}
+            />
           </Field>
-          <Field label="Preço" hint="Use ponto decimal, ex. 1890.00">
-            <input className={fieldClass} value={form.price} onChange={(e) => patch({ price: e.target.value })} />
+          <Field label="Preço normal (R$)" hint="Use ponto decimal, ex. 5237.00">
+            <input
+              inputMode="decimal"
+              className={fieldClass}
+              value={form.price}
+              onChange={(e) => patch({ price: e.target.value })}
+            />
           </Field>
+          <Field
+            label="Preço promocional (R$)"
+            hint="Opcional. Deixe vazio para encerrar a promoção."
+          >
+            <input
+              inputMode="decimal"
+              className={fieldClass}
+              value={form.salePrice}
+              aria-invalid={Boolean(invalidPromotion)}
+              aria-describedby="product-promotion-preview"
+              onChange={(e) => patch({ salePrice: e.target.value })}
+            />
+          </Field>
+        </div>
+        <div id="product-promotion-preview" aria-live="polite" className="text-sm">
+          {invalidPromotion ? (
+            <p className="text-danger">{invalidPromotion}</p>
+          ) : pricing?.promotional ? (
+            <p>
+              De {formatCatalogPrice(pricing.regular)} por {formatCatalogPrice(pricing.current)} ·{" "}
+              {pricing.discountPercent}% de desconto · Economize{" "}
+              {formatCatalogPrice(pricing.savings)}
+            </p>
+          ) : (
+            <p className="text-foreground-muted">
+              Sem promoção: o site exibe somente o preço normal.
+            </p>
+          )}
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Disponibilidade">
-            <select className={fieldClass} value={form.availability} onChange={(e) => patch({ availability: e.target.value })}>
+            <select
+              className={fieldClass}
+              value={form.availability}
+              onChange={(e) => patch({ availability: e.target.value })}
+            >
               <option value="AVAILABLE">Disponível</option>
               <option value="UNAVAILABLE">Indisponível</option>
               <option value="COMING_SOON">Em breve</option>
@@ -324,7 +467,12 @@ export function ProductForm({ id, initial }: { id?: string; initial?: Record<str
           </Field>
         </div>
         <p className="text-sm">Itens inclusos</p>
-        <StringListEditor items={form.itemsIncluded} onChange={(itemsIncluded) => patch({ itemsIncluded })} addLabel="Adicionar item" placeholder="Ex.: Tampa de vidro" />
+        <StringListEditor
+          items={form.itemsIncluded}
+          onChange={(itemsIncluded) => patch({ itemsIncluded })}
+          addLabel="Adicionar item"
+          placeholder="Ex.: Tampa de vidro"
+        />
       </FormSection>
 
       <SeoPanel
@@ -346,7 +494,11 @@ export function ProductForm({ id, initial }: { id?: string; initial?: Record<str
           <span className="text-sm text-foreground-muted">versão {form.version}</span>
         </div>
         <Field label="Status">
-          <select className={fieldClass} value={form.status} onChange={(e) => patch({ status: e.target.value })}>
+          <select
+            className={fieldClass}
+            value={form.status}
+            onChange={(e) => patch({ status: e.target.value })}
+          >
             <option value="DRAFT">Rascunho</option>
             <option value="SCHEDULED">Agendado</option>
             <option value="PUBLISHED">Publicado</option>
@@ -354,11 +506,19 @@ export function ProductForm({ id, initial }: { id?: string; initial?: Record<str
           </select>
         </Field>
         <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" checked={form.featured} onChange={(e) => patch({ featured: e.target.checked })} />
+          <input
+            type="checkbox"
+            checked={form.featured}
+            onChange={(e) => patch({ featured: e.target.checked })}
+          />
           Destacar na vitrine
         </label>
         <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" checked={form.isDemo} onChange={(e) => patch({ isDemo: e.target.checked })} />
+          <input
+            type="checkbox"
+            checked={form.isDemo}
+            onChange={(e) => patch({ isDemo: e.target.checked })}
+          />
           Conteúdo demonstrativo (não é catálogo oficial)
         </label>
         {recordId ? (

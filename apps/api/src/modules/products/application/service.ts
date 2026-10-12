@@ -77,6 +77,7 @@ function mapProduct(row: Awaited<ReturnType<typeof load>>) {
       status: variant.status,
     })),
     price: decimalToString(row.price),
+    salePrice: decimalToString(row.salePrice),
     availability: row.availability,
     featured: row.featured,
     status: row.status,
@@ -113,6 +114,7 @@ function toSnapshot(data: ProductWrite, slug: string) {
     details: data.details ?? {},
     variants: data.variants ?? [],
     price: data.price ?? null,
+    salePrice: data.salePrice ?? null,
     availability: data.availability,
     featured: data.featured,
     status: data.status,
@@ -138,6 +140,7 @@ function toUpdateData(data: ProductWrite, slug: string, actor?: ContentActor) {
     itemsIncluded: data.itemsIncluded as Prisma.InputJsonValue,
     details: (data.details ?? {}) as Prisma.InputJsonValue,
     price: data.price ?? null,
+    salePrice: data.salePrice ?? null,
     availability: data.availability,
     featured: data.featured,
     status: data.status,
@@ -286,6 +289,7 @@ export async function createProduct(input: ProductWrite, actor?: ContentActor) {
         itemsIncluded: data.itemsIncluded as Prisma.InputJsonValue,
         details: (data.details ?? {}) as Prisma.InputJsonValue,
         price: data.price ?? null,
+        salePrice: data.salePrice ?? null,
         availability: data.availability,
         featured: data.featured,
         status: data.status,
@@ -319,7 +323,10 @@ export async function updateProduct(id: string, input: ProductWrite, actor?: Con
   if (current.deletedAt) {
     throw new HttpError(404, "Produto não encontrado.", { code: "NOT_FOUND" });
   }
-  const data = productWriteSchema.parse(input);
+  const data = productWriteSchema.parse({
+    ...input,
+    salePrice: input.salePrice === undefined ? decimalToString(current.salePrice) : input.salePrice,
+  });
   const expectedVersion = requireExpectedVersion(data.expectedVersion);
   const slug = normalizeSlug(data.slug);
   if (!slug) {
@@ -341,6 +348,7 @@ export async function updateProduct(id: string, input: ProductWrite, actor?: Con
       itemsIncluded: asStringArray(current.itemsIncluded),
       details: asProductDetails(current.details),
       price: decimalToString(current.price),
+      salePrice: decimalToString(current.salePrice),
       availability: current.availability,
       featured: current.featured,
       status: current.status,

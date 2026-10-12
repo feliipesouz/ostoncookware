@@ -1,5 +1,7 @@
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
 
+import { loginAsAdmin } from "./helpers";
+
 type Collection = { id: string; name: string; slug: string };
 type Product = {
   id: string; name: string; slug: string; collectionId: string; collectionSlug?: string;
@@ -104,7 +106,7 @@ test("produto sob consulta não inventa preço ou avaliações em JSON-LD", asyn
   const schemas = await page.locator('script[type="application/ld+json"]').allTextContents();
   if (product.isDemo || !product.price) {
     expect(schemas.some((schema) => schema.includes('"@type":"Offer"'))).toBeFalsy();
-    await expect(page.getByText("Sob consulta", { exact: true })).toBeVisible();
+    await expect(page.getByText(product.isDemo ? "Conteúdo demonstrativo" : "Sob consulta", { exact: true })).toBeVisible();
   }
   expect(schemas.some((schema) => schema.includes("aggregateRating"))).toBeFalsy();
   expect(schemas.join(" ")).not.toContain("undefined");
@@ -146,4 +148,74 @@ test("coleção sem produto mantém sua página editorial", async ({ page, reque
     return;
   }
   throw new Error("O seed deve conter uma coleção sem produtos para validar a página editorial.");
+});
+
+
+test("admin publica promoção e encerra desconto mantendo preço normal e SEO", async ({ page }) => {
+  test.skip(!process.env.E2E_ADMIN_EMAIL || !process.env.E2E_ADMIN_PASSWORD, "Credenciais E2E não definidas");
+  await loginAsAdmin(page);
+  const token = `e2e-preco-${Date.now().toString(36)}`;
+  // Isolated fixtures: never change prices or ordering in the official catalogue.
+  const collectionResponse = await page.request.post("/v1/admin/collections", {
+    data: { name: `Coleção ${token}`, slug: `${token}-colecao`, status: "PUBLISHED", sortOrder: 9999 },
+  });
+  expect(collectionResponse.status()).toBe(201);
+  const collection = (await collectionResponse.json()).data;
+  const productResponse = await page.request.post("/v1/admin/products", {
+    data: { collectionId: collection.id, name: `Conjunto ${token}`, slug: token, status: "PUBLISHED", price: "5237.00" },
+  });
+  expect(productResponse.status()).toBe(201);
+  const product = (await productResponse.json()).data;
+  const apiPath = `/v1/admin/products/${product.id}`;
+  const editPath = `/admin/produtos/${product.id}`;
+  const publicPath = `/produtos/${token}`;
+
+  async function savePromotion(value: string) {
+    await page.goto(editPath);
+    const regular = page.getByLabel(/^Preço normal/);
+    const sale = page.getByLabel(/^Preço promocional/);
+    await expect(regular).toHaveValue(/5237(?:\.00)?/);
+    await sale.fill(value);
+    const responsePromise = page.waitForResponse((response) =>
+      new URL(response.url()).pathname === apiPath && response.request().method() === "PUT",
+    );
+    await page.getByTestId("publish").click();
+    const response = await responsePromise;
+    expect(response.ok()).toBeTruthy();
+    const persisted = (await response.json()).data;
+    expect(Number(persisted.price)).toBe(5237);
+    if (value) expect(Number(persisted.salePrice)).toBe(3000);
+    else expect(persisted.salePrice).toBeNull();
+  }
+
+  async function expectOffer(amount: number) {
+    const scripts = await page.locator('script[type="application/ld+json"]').allTextContents();
+    const productSchema = scripts.map((script) => JSON.parse(script)).find((schema) => schema["@type"] === "Product");
+    expect(productSchema).toBeDefined();
+    expect(productSchema.offers.priceCurrency).toBe("BRL");
+    expect(Number(productSchema.offers.price)).toBe(amount);
+  }
+
+  try {
+    await savePromotion("3000.00");
+    await page.goto(publicPath);
+    const price = page.locator('[aria-label="Preço do produto"]').first();
+    await expect(price.locator("s")).toHaveText(/5\.237,00/);
+    await expect(price).toContainText("42% de desconto");
+    await expect(price).toContainText(/3\.000,00/);
+    await expect(price).toContainText(/Economize R\$\s*2\.237,00/);
+    await expectOffer(3000);
+
+    await savePromotion("");
+    await page.goto(publicPath);
+    await expect(price).toContainText(/5\.237,00/);
+    await expect(price.locator("s")).toHaveCount(0);
+    await expect(price).not.toContainText("de desconto");
+    await expect(price).not.toContainText("Economize");
+    await expectOffer(5237);
+  } finally {
+    // Keep subsequent catalogue tests independent, including on a failed assertion.
+    await page.request.post(`${apiPath}/archive`);
+    await page.request.post(`/v1/admin/collections/${collection.id}/archive`);
+  }
 });

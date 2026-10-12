@@ -70,6 +70,7 @@ export type Product = {
   seoDescription: string | null;
   sku?: string | null;
   price?: string | null;
+  salePrice?: string | null;
   details?: ProductDetails;
   variants?: { id: string; name: string; sku: string | null; attributes: Record<string, unknown>; price: string | null; availability: string; status: string }[];
   canonicalPath?: string | null;

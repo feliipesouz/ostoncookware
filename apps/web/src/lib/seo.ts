@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import type { Product, Settings } from "./content";
 import { mediaSrc } from "./api";
-import { CATALOG_CURRENCY, catalogPrice, productImages } from "./catalog";
+import { CATALOG_CURRENCY, productPricing, productImages } from "./catalog";
 
 export function siteUrl() {
   try {
@@ -84,9 +84,9 @@ export function breadcrumbData(items: { name: string; path: string }[]) {
 }
 
 export function productData(product: Product, settings: Settings) {
-  const price = catalogPrice(product.price);
+  const pricing = productPricing(product);
   // Sem preço publicado não há oferta nem avaliações inventadas para completar o schema.
-  if (product.isDemo || price === null || product.availability !== "AVAILABLE") return null;
+  if (product.isDemo || pricing === null || product.availability !== "AVAILABLE") return null;
   const url = absoluteUrl(canonicalPath(product.canonicalPath, "/produtos/" + product.slug));
   return {
     "@context": "https://schema.org",
@@ -105,7 +105,7 @@ export function productData(product: Product, settings: Settings) {
     })),
     offers: {
       "@type": "Offer",
-      price: price.toFixed(2),
+      price: pricing.current,
       priceCurrency: CATALOG_CURRENCY,
       url,
       seller: { "@type": "Organization", name: settings.brandName },

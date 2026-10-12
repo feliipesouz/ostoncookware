@@ -66,6 +66,7 @@ export const productWriteSchema = z
     details: productDetailsSchema.optional(),
     variants: z.array(productVariantWriteSchema).max(40).optional(),
     price: moneySchema.optional(),
+    salePrice: moneySchema.optional(),
     availability: productAvailabilitySchema.default("AVAILABLE"),
     featured: z.boolean().default(false),
     status: contentStatusSchema.default("DRAFT"),
@@ -74,7 +75,19 @@ export const productWriteSchema = z
     expectedVersion: expectedVersionSchema,
     ...seoFieldsSchema.shape,
   })
-  .strict();
+  .strict()
+  .superRefine((data, ctx) => {
+    if (data.salePrice == null) return;
+    const sale = Number(data.salePrice);
+    const regular = Number(data.price);
+    if (!Number.isFinite(sale) || sale <= 0 || !data.price || !Number.isFinite(regular) || sale >= regular) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["salePrice"],
+        message: "Preço promocional deve ser maior que zero e menor que o preço normal.",
+      });
+    }
+  });
 
 export const productSummarySchema = z.object({
   id: z.string(),
@@ -87,6 +100,7 @@ export const productSummarySchema = z.object({
   shortDescription: z.string().nullable(),
   coverImage: mediaSummarySchema.nullable(),
   price: z.string().nullable(),
+  salePrice: z.string().nullable().default(null),
   availability: productAvailabilitySchema,
   featured: z.boolean(),
   status: contentStatusSchema,
