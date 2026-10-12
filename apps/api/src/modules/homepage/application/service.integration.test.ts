@@ -50,4 +50,37 @@ describe.skipIf(process.env.RUN_API_INTEGRATION !== "true")("homepage publicatio
     expect(stored.version).toBe(2);
     expect(stored.sections).toEqual(accepted[0]?.value.sections);
   });
+
+  it("persists slide order, hydrates both crops and rejects unknown slide media without publishing", async () => {
+    const mediaIds: string[] = [];
+    try {
+      for (const suffix of ["desktop-a", "mobile-a", "desktop-b"]) {
+        const media = await prisma.mediaAsset.create({ data: {
+          url: `/catalogo/qa-carousel-${suffix}.webp`, pathname: `qa-carousel-${suffix}.webp`,
+          originalFilename: `${suffix}.webp`, mimeType: "image/webp", size: 100, type: "IMAGE",
+        } });
+        mediaIds.push(media.id);
+      }
+      const before = await getHomepage();
+      const slides = [
+        { desktopImageId: mediaIds[2]!, imageAlt: "Segundo conjunto primeiro" },
+        { desktopImageId: mediaIds[0]!, mobileImageId: mediaIds[1]!, imageAlt: "Primeiro conjunto depois" },
+      ];
+      await updateHomepage({ sections: [{ ...defaultBrandHeroSection, slides }], expectedVersion: before.version });
+      const saved = await getHomepage();
+      const hero = saved.sections.find((section) => section.type === "BRAND_HERO");
+      expect(hero).toMatchObject({ slides: [
+        { ...slides[0], desktopImage: { id: mediaIds[2] }, mobileImage: null },
+        { ...slides[1], desktopImage: { id: mediaIds[0] }, mobileImage: { id: mediaIds[1] } },
+      ] });
+      await expect(updateHomepage({
+        sections: [{ ...defaultBrandHeroSection, slides: [{ desktopImageId: "missing-carousel-image" }] }],
+        expectedVersion: saved.version,
+      })).rejects.toMatchObject({ status: 400, code: "VALIDATION_ERROR" });
+      expect((await getHomepage()).version).toBe(saved.version);
+    } finally {
+      await prisma.mediaAsset.deleteMany({ where: { id: { in: mediaIds } } });
+    }
+  });
+
 });

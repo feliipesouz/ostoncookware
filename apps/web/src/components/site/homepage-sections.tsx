@@ -63,6 +63,7 @@ export function HomepageSections({
                     textAlign: section.textAlign,
                     focalPosition: section.focalPosition,
                     overlay: section.overlay,
+                    slides: section.slides,
                   }}
                 />
                 <div id="universo-oston" className="hero-scroll-target" />

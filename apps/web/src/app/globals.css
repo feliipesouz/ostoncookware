@@ -1946,3 +1946,78 @@ body {
     animation: none;
   }
 }
+
+/* A stable full-viewport canvas; only the photographs crossfade. */
+.hero-immersive .hero-layout {
+  min-height: 100svh;
+  padding-top: calc(var(--header-height) + clamp(1rem, 3vh, 2rem));
+}
+.hero-immersive .hero-content {
+  padding-block: clamp(2rem, 6vh, 5rem);
+}
+.hero-immersive .hero-visual {
+  inset: 0;
+  transform: none;
+}
+.hero-slide {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 1600ms ease-in-out;
+  pointer-events: none;
+}
+.hero-slide.is-active {
+  opacity: 1;
+}
+.hero-immersive .hero-image {
+  transform: none;
+}
+.hero-immersive .hero-overlay {
+  background:
+    linear-gradient(90deg, rgb(13 19 15 / 0.78), rgb(13 19 15 / 0.34) 58%, rgb(13 19 15 / 0.15)),
+    linear-gradient(0deg, rgb(13 19 15 / 0.65), transparent 30%),
+    rgb(13 19 15 / calc(var(--hero-overlay, 0.2) * 0.5));
+}
+.hero-immersive.hero-align-right .hero-overlay {
+  background: linear-gradient(270deg, rgb(13 19 15 / 0.8), rgb(13 19 15 / 0.25)), rgb(13 19 15 / calc(var(--hero-overlay, 0.2) * 0.5));
+}
+.hero-immersive.hero-align-center .hero-overlay {
+  background: rgb(13 19 15 / max(0.58, var(--hero-overlay)));
+}
+.hero-slide-controls {
+  position: absolute;
+  right: max(var(--gutter), calc((100vw - var(--max-width)) / 2));
+  bottom: 5rem;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: #fff;
+  font-size: 0.65rem;
+  letter-spacing: 0.08em;
+}
+.hero-slide-controls button {
+  min-height: 44px;
+  min-width: 44px;
+  justify-content: center;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid rgb(255 255 255 / 0.4);
+  background: rgb(13 19 15 / 0.55);
+}
+.hero-slide-controls button:hover {
+  background: rgb(13 19 15 / 0.8);
+}
+@media (max-width: 767px) {
+  .hero-immersive .hero-title {
+    font-size: clamp(2.5rem, 11vw, 4.6rem);
+  }
+  .hero-immersive .hero-content {
+    padding-bottom: 5rem;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-slide { transition: none; }
+}

@@ -214,4 +214,30 @@ describe("editable homepage shopping sections", () => {
     }));
     expect(() => withShoppingSections(sections)).toThrow("A homepage pode ter até 20 seções.");
   });
+
+  it("keeps legacy hero images valid and collects deduplicated carousel media in order", () => {
+    const hero = {
+      ...defaultBrandHeroSection,
+      desktopImageId: "legacy",
+      slides: [
+        { desktopImageId: "first", mobileImageId: "first-mobile", imageAlt: "Primeiro conjunto" },
+        { desktopImageId: "second", mobileImageId: "first-mobile", focalPosition: "center" as const },
+      ],
+    };
+    expect(homepageSectionsSchema.parse([defaultBrandHeroSection])[0]).toMatchObject(defaultBrandHeroSection);
+    expect(homepageSectionsSchema.parse([hero])[0]).toMatchObject(hero);
+    expect(homepageMediaIds([hero])).toEqual(["legacy", "first", "first-mobile", "second"]);
+  });
+
+  it("rejects incomplete carousel images and more than six slides", () => {
+    const validate = (slides: unknown[]) => homepageWriteSchema.safeParse({
+      sections: [{ ...defaultBrandHeroSection, slides }], expectedVersion: 1,
+    }).success;
+    expect(validate([])).toBe(true);
+    expect(validate([{ desktopImageId: "photo" }])).toBe(true);
+    expect(validate([{ mobileImageId: "mobile-only" }])).toBe(false);
+    expect(validate([{ desktopImageId: "photo", imageAlt: "   " }])).toBe(false);
+    expect(validate(Array.from({ length: 7 }, (_, i) => ({ desktopImageId: `photo-${i}` })))).toBe(false);
+  });
+
 });

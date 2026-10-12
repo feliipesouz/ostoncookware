@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { loginAsAdmin } from "./helpers";
+import { defaultBrandHeroSection, homepageSectionsSchema } from "@oston/contracts";
 
 const email = process.env.E2E_ADMIN_EMAIL;
 const password = process.env.E2E_ADMIN_PASSWORD;
@@ -116,4 +117,65 @@ test.describe("fluxo editorial", () => {
     expect(persisted.ok()).toBe(true);
     expect((await persisted.json()).data).toMatchObject({ id: initial.id, name: originalName, status: "DRAFT", version: current.version + 1 });
   });
+
+  test("hero alterna em quatro segundos, pausa e respeita movimento reduzido", async ({ page, baseURL }) => {
+    test.skip(!baseURL || !["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname), "Altera somente a homepage do ambiente E2E local descartável");
+    await loginAsAdmin(page);
+    const endpoint = "/v1/admin/homepage";
+    const originalResponse = await page.request.get(endpoint);
+    expect(originalResponse.ok()).toBeTruthy();
+    const original = (await originalResponse.json()).data;
+    const originalSections = homepageSectionsSchema.parse(original.sections);
+    const mediaResponse = await page.request.get("/v1/admin/media?pageSize=50");
+    expect(mediaResponse.ok()).toBeTruthy();
+    const images = (await mediaResponse.json()).data.filter((item: { type: string }) => item.type === "IMAGE");
+    expect(images.length).toBeGreaterThanOrEqual(2);
+    try {
+      const publication = await page.request.put(endpoint, { data: {
+        expectedVersion: original.version,
+        sections: [{ ...defaultBrandHeroSection, slides: images.slice(0, 2).map((image: { id: string }, index: number) => ({
+          desktopImageId: image.id, imageAlt: `Hero E2E imagem ${index + 1}`,
+        })) }],
+      } });
+      expect(publication.ok()).toBeTruthy();
+      await page.emulateMedia({ reducedMotion: "no-preference" });
+      await page.clock.install({ time: new Date("2026-01-01T12:00:00Z") });
+      await page.clock.pauseAt(new Date("2026-01-01T12:00:01Z"));
+      await page.goto("/");
+      const hero = page.getByRole("region", { name: "Universo OSTON" });
+      const slides = hero.locator(".hero-slide");
+      await expect(slides).toHaveCount(2);
+      await expect(hero.getByRole("button", { name: "Pausar alternância de imagens" })).toBeVisible();
+      await expect.poll(() => slides.locator("img").evaluateAll((nodes) => nodes.every((node) => {
+        const image = node as HTMLImageElement;
+        return image.complete && image.naturalWidth > 0;
+      }))).toBe(true);
+      const viewport = page.viewportSize()!;
+      const box = (await hero.boundingBox())!;
+      expect(box.width).toBeGreaterThanOrEqual(viewport.width - 2);
+      expect(box.height).toBeGreaterThanOrEqual(viewport.height * 0.75);
+      await expect(slides.nth(0)).toHaveClass(/is-active/);
+      await page.clock.runFor(3999);
+      await expect(slides.nth(0)).toHaveClass(/is-active/);
+      await page.clock.runFor(1);
+      await expect(slides.nth(1)).toHaveClass(/is-active/);
+      await hero.getByRole("button", { name: "Pausar alternância de imagens" }).click();
+      await page.clock.runFor(8000);
+      await expect(slides.nth(1)).toHaveClass(/is-active/);
+      await hero.getByRole("button", { name: "Retomar alternância de imagens" }).click();
+      await page.clock.runFor(4000);
+      await expect(slides.nth(0)).toHaveClass(/is-active/);
+      await page.emulateMedia({ reducedMotion: "reduce" });
+      await expect(hero.getByRole("button", { name: "Pausar alternância de imagens" })).toHaveCount(0);
+      await page.clock.runFor(8000);
+      await expect(slides.nth(0)).toHaveClass(/is-active/);
+      await hero.getByRole("button", { name: "Mostrar próxima imagem" }).click();
+      await expect(slides.nth(1)).toHaveClass(/is-active/);
+    } finally {
+      const current = (await (await page.request.get(endpoint)).json()).data;
+      const restored = await page.request.put(endpoint, { data: { sections: originalSections, expectedVersion: current.version } });
+      expect(restored.ok(), "A homepage E2E original deve ser restaurada").toBeTruthy();
+    }
+  });
+
 });

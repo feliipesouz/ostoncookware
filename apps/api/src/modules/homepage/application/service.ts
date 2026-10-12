@@ -31,6 +31,11 @@ async function hydrateSections(sections: HomepageSection[]) {
     if (section.type === "BRAND_HERO") {
       return {
         ...section,
+        slides: (section.slides ?? []).map((slide) => ({
+          ...slide,
+          desktopImage: byId.get(slide.desktopImageId) ?? null,
+          mobileImage: slide.mobileImageId ? byId.get(slide.mobileImageId) ?? null : null,
+        })),
         desktopImage: section.desktopImageId ? byId.get(section.desktopImageId) ?? null : null,
         mobileImage: section.mobileImageId ? byId.get(section.mobileImageId) ?? null : null,
       };
