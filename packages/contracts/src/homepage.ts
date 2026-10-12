@@ -18,9 +18,17 @@ export const heroCampaignSectionSchema = sectionBaseSchema.extend({
   type: z.literal("hero_campaign"),
 });
 
+export const brandHeroSlideSchema = z.object({
+  desktopImageId: z.string().min(1),
+  mobileImageId: z.string().min(1).nullable().optional(),
+  imageAlt: z.string().trim().min(1).max(180).optional(),
+  focalPosition: campaignFocalSchema.optional(),
+});
+
 // Brand content belongs to the homepage, independently of a campaign's lifecycle.
 export const brandHeroSectionSchema = sectionBaseSchema.extend({
   type: z.literal("BRAND_HERO"),
+  slides: z.array(brandHeroSlideSchema).max(6).optional(),
   eyebrow: z.string().max(80),
   title: z.string().trim().min(1).max(180),
   subtitle: z.string().max(400),
@@ -459,10 +467,13 @@ export function homepageMediaIds(sections: HomepageSection[]): string[] {
   return [
     ...new Set(
       sections.flatMap((section) => {
-        if (section.type === "BRAND_HERO")
-          return [section.desktopImageId, section.mobileImageId].filter((id): id is string =>
-            Boolean(id),
-          );
+        if (section.type === "BRAND_HERO") {
+          return [
+            section.desktopImageId,
+            section.mobileImageId,
+            ...(section.slides ?? []).flatMap((slide) => [slide.desktopImageId, slide.mobileImageId]),
+          ].filter((id): id is string => Boolean(id));
+        }
         return "imageId" in section && section.imageId ? [section.imageId] : [];
       }),
     ),

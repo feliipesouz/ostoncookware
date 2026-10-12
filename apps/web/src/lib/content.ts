@@ -12,6 +12,13 @@ export type Media = {
   height: number | null;
 };
 
+export type HeroSlide = {
+  desktopImage?: Media | null;
+  mobileImage?: Media | null;
+  imageAlt?: string;
+  focalPosition?: string;
+};
+
 export type Campaign = {
   id: string;
   eyebrow: string | null;
@@ -29,6 +36,7 @@ export type Campaign = {
   focalPosition: string;
   overlay: number;
   collectionId: string | null;
+  slides?: HeroSlide[];
 };
 
 export type Collection = {
@@ -125,6 +133,7 @@ export type PublicHomepageSection = HomepageSection & {
   image?: Media | null;
   desktopImage?: Media | null;
   mobileImage?: Media | null;
+  slides?: (HeroSlide & { desktopImageId: string; mobileImageId?: string | null })[];
 };
 
 export type PublicSite = {

@@ -264,10 +264,12 @@ function SectionFields({
   campaigns: CampaignOption[];
   onChange: (section: HomepageSection) => void;
 }) {
+  const [slideImage, setSlideImage] = useState<{ index: number; key: "desktopImageId" | "mobileImageId" } | null>(null);
   const [heroImage, setHeroImage] = useState<"desktopImageId" | "mobileImageId" | null>(null);
   const [compositionImageOpen, setCompositionImageOpen] = useState(false);
 
   if (section.type === "BRAND_HERO") {
+    const slides = section.slides ?? [];
     return (
       <div className="mt-4 grid gap-4">
         <p className="text-sm text-foreground-muted">
@@ -328,6 +330,55 @@ function SectionFields({
           label="Descrição acessível da imagem"
           value={section.imageAlt}
           onChange={(value) => onChange({ ...section, imageAlt: value })}
+        />
+        <fieldset className="grid gap-4 border border-border p-4">
+          <legend className="px-2 font-medium">Carrossel de imagens</legend>
+          <p className="text-sm text-foreground-muted">Adicione até 6 imagens. A ordem abaixo define a apresentação. Sem slides, o site usa a imagem principal acima. A imagem mobile é opcional.</p>
+          {slides.map((slide, index) => (
+            <div key={`${index}-${slide.desktopImageId}`} className="grid gap-3 border border-border p-3">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <p className="text-sm font-medium">Imagem {index + 1}</p>
+                <div className="flex items-center gap-3">
+                  <ReorderControls index={index} total={slides.length} label={`imagem ${index + 1}`} onMove={(direction) => onChange({ ...section, slides: moveItem(slides, index, direction) })} />
+                  <button type="button" className="text-sm underline" aria-label={`Remover imagem ${index + 1}`} onClick={() => onChange({ ...section, slides: slides.filter((_, i) => i !== index) })}>Remover</button>
+                </div>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {(["desktopImageId", "mobileImageId"] as const).map((key) => (
+                  <div key={key} className="grid gap-2 text-sm">
+                    <p>{key === "desktopImageId" ? "Desktop" : "Mobile (opcional)"}</p>
+                    <p className="truncate text-foreground-muted">{slide[key] ? media.find((item) => item.id === slide[key])?.originalFilename ?? "Imagem selecionada" : "Usa a imagem desktop"}</p>
+                    <div className="flex gap-3">
+                      <button type="button" className="underline" aria-label={`Escolher imagem ${key === "desktopImageId" ? "desktop" : "mobile"} do slide ${index + 1}`} onClick={() => setSlideImage({ index, key })}>Escolher imagem</button>
+                      {key === "mobileImageId" && slide.mobileImageId ? <button type="button" className="underline" onClick={() => onChange({ ...section, slides: slides.map((item, i) => i === index ? { ...item, mobileImageId: null } : item) })}>Usar desktop</button> : null}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <Field label={`Descrição acessível da imagem ${index + 1}`} value={slide.imageAlt ?? ""} onChange={(value) => onChange({ ...section, slides: slides.map((item, i) => i === index ? { ...item, imageAlt: value.trim() || undefined } : item) })} />
+              <label className="grid gap-1 text-sm">Ponto focal da imagem {index + 1}
+                <select className="border border-border px-3 py-2" value={slide.focalPosition ?? "center"} onChange={(event) => onChange({ ...section, slides: slides.map((item, i) => i === index ? { ...item, focalPosition: event.target.value as typeof section.focalPosition } : item) })}>
+                  {["center", "top", "bottom", "left", "right", "top-left", "top-right", "bottom-left", "bottom-right"].map((value) => <option key={value}>{value}</option>)}
+                </select>
+              </label>
+            </div>
+          ))}
+          <button type="button" disabled={slides.length >= 6} className="justify-self-start border border-border px-3 py-2 text-sm disabled:opacity-40" onClick={() => setSlideImage({ index: slides.length, key: "desktopImageId" })}>Adicionar imagem ao carrossel ({slides.length}/6)</button>
+        </fieldset>
+        <MediaPicker
+          open={slideImage !== null}
+          multiple={false}
+          selectedIds={slideImage && slides[slideImage.index]?.[slideImage.key] ? [slides[slideImage.index]![slideImage.key]!] : []}
+          onClose={() => setSlideImage(null)}
+          onSelect={(items) => {
+            if (!slideImage || !items[0]) return;
+            if (slideImage.index >= slides.length) {
+              if (slides.length < 6) onChange({ ...section, slides: [...slides, { desktopImageId: items[0].id, imageAlt: items[0].alt?.trim() || undefined, focalPosition: "center" }] });
+            } else {
+              onChange({ ...section, slides: slides.map((item, i) => i === slideImage.index ? { ...item, [slideImage.key]: items[0]!.id } : item) });
+            }
+            setSlideImage(null);
+          }}
         />
         <div className="grid gap-3 sm:grid-cols-2">
           <Field

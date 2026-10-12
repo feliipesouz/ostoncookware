@@ -5,8 +5,8 @@ import type { Campaign } from "@/lib/content";
 import { mediaSrc } from "@/lib/api";
 import { isSafeCtaUrl } from "@/lib/safe-url";
 import { ArrowIcon, ArrowUpRightIcon } from "./icons";
-import { GeometryMark } from "./geometry-mark";
 import { MotionSurface } from "./motion-surface";
+import { HeroSlideshow } from "./hero-slideshow";
 
 const atmosphere = "/editorial/culinary-atmosphere.webp";
 
@@ -15,34 +15,30 @@ function rasterDemo(url: string) {
 }
 
 export function CampaignHero({ campaign }: { campaign: Campaign }) {
-  const desktop = campaign.desktopImage
-    ? rasterDemo(mediaSrc(campaign.desktopImage.url))
-    : atmosphere;
-  const mobile = campaign.mobileImage ? rasterDemo(mediaSrc(campaign.mobileImage.url)) : desktop;
-  const productHero =
-    new URL(desktop, "https://oston.invalid").pathname.startsWith("/catalogo/") &&
-    campaign.textAlign === "left";
-  const alt = campaign.desktopImage
-    ? campaign.imageAlt
-    : "Composição editorial de ingredientes, ervas e linho sobre uma bancada";
-  const sizes = productHero ? "(max-width: 767px) 100vw, 62vw" : "100vw";
-  const { props: desktopProps } = getImageProps({
-    src: desktop,
-    alt,
-    width: campaign.desktopImage?.width ?? 1536,
-    height: campaign.desktopImage?.height ?? 1024,
-    sizes,
-    loading: "eager",
-    fetchPriority: "high",
-  });
-  const { props: mobileProps } = getImageProps({
-    src: mobile,
-    alt,
-    width: campaign.mobileImage?.width ?? 1200,
-    height: campaign.mobileImage?.height ?? 1800,
-    sizes: "100vw",
-    loading: "eager",
-    fetchPriority: "high",
+  const configured = campaign.slides?.filter((slide) => slide.desktopImage || slide.mobileImage);
+  const slides = configured?.length ? configured : [campaign];
+  const pictures = slides.map((slide, index) => {
+    const desktopImage = slide.desktopImage ?? slide.mobileImage;
+    const desktop = desktopImage ? rasterDemo(mediaSrc(desktopImage.url)) : atmosphere;
+    const mobileImage = slide.mobileImage ?? desktopImage;
+    const mobile = mobileImage ? rasterDemo(mediaSrc(mobileImage.url)) : desktop;
+    const alt = slide.imageAlt || campaign.imageAlt || desktopImage?.alt || "Universo OSTON";
+    const { props: desktopProps } = getImageProps({
+      src: desktop, alt, width: desktopImage?.width ?? 1536,
+      height: desktopImage?.height ?? 1024, sizes: "100vw",
+      loading: "eager", fetchPriority: index === 0 ? "high" : "low",
+    });
+    const { props: mobileProps } = getImageProps({
+      src: mobile, alt, width: mobileImage?.width ?? 1200,
+      height: mobileImage?.height ?? 1800, sizes: "100vw",
+      loading: "eager", fetchPriority: index === 0 ? "high" : "low",
+    });
+    return (
+      <picture key={index}>
+        {mobile !== desktop ? <source media="(max-width: 767px)" srcSet={mobileProps.srcSet} sizes="100vw" /> : null}
+        <img {...desktopProps} alt={alt} className="hero-image" style={{ objectPosition: (slide.focalPosition ?? campaign.focalPosition ?? "center").replace("-", " ") }} />
+      </picture>
+    );
   });
   const secondary =
     campaign.secondaryCtaLabel &&
@@ -51,22 +47,11 @@ export function CampaignHero({ campaign }: { campaign: Campaign }) {
 
   return (
     <section
-      className={`brand-hero hero-align-${campaign.textAlign} ${productHero ? "hero-product" : ""}`}
+      className={`brand-hero hero-immersive hero-align-${campaign.textAlign}`}
       aria-label="Universo OSTON"
     >
       <MotionSurface className="hero-surface">
-        <div className="hero-visual">
-          <picture>
-            {mobile !== desktop ? (
-              <source media="(max-width: 767px)" srcSet={mobileProps.srcSet} sizes="100vw" />
-            ) : null}
-            <img
-              {...desktopProps}
-              alt={alt}
-              className={`hero-image hero-focal-${campaign.focalPosition}`}
-            />
-          </picture>
-        </div>
+        <HeroSlideshow slides={pictures} />
         <div
           className="hero-overlay"
           style={
@@ -75,7 +60,6 @@ export function CampaignHero({ campaign }: { campaign: Campaign }) {
             } as CSSProperties
           }
         />
-        {productHero ? <GeometryMark className="hero-geometry" /> : null}
         <div className="site-grid hero-layout">
           <div className="hero-topline" aria-hidden="true">
             <span>O prazer de cozinhar.</span>
