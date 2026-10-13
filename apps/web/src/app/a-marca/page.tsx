@@ -1,3 +1,4 @@
+import { ArrowUpRightIcon } from "@/components/site/icons";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { PublicChrome } from "@/components/site/public-chrome";
@@ -32,15 +33,15 @@ export default async function BrandPage() {
     <PublicChrome settings={site.settings} navigation={site.navigation} announcement={site.announcement}>
       <main className="bg-background">
         <div className="site-grid grid gap-10 py-16 md:grid-cols-12 md:py-28">
-          <div className="md:col-span-7">
+          <div className="md:col-span-7" data-editorial-reveal>
             <p className="eyebrow">{page?.eyebrow ?? "A marca"}</p>
             <h1 className="display-title mt-5">{page?.title ?? "O seu jeito de estar à mesa."}</h1>
             <div className="editorial-rule mt-8" />
           </div>
-          <div className="md:col-span-5 md:pt-12">
+          <div className="md:col-span-5 md:pt-12" data-editorial-reveal data-editorial-delay="120">
             {paragraphs.map((paragraph, index) => <p key={index} className="editorial-copy mt-7 first:mt-0">{paragraph}</p>)}
-            <Link href="/colecoes" className="button-primary mt-10">Explore as coleções <span aria-hidden="true">↗</span></Link>
-            <Link href="/contato" className="button-link mt-6">Converse com a OSTON <span aria-hidden="true">↗</span></Link>
+            <Link href="/colecoes" className="button-primary mt-10">Explore as coleções <ArrowUpRightIcon className="h-4 w-4 shrink-0" /></Link>
+            <Link href="/contato" className="button-link mt-6">Converse com a OSTON <ArrowUpRightIcon className="h-4 w-4 shrink-0" /></Link>
           </div>
         </div>
       </main>

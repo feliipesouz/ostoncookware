@@ -1,5 +1,6 @@
 "use client";
 
+import { ArrowUpRightIcon } from "@/components/site/icons";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import type { Collection } from "@/lib/content";
@@ -97,7 +98,7 @@ export function ContactForm({ collections, context = emptyContext, privacyUrl }:
         <p className="eyebrow">Mensagem recebida</p>
         <h2 className="font-display mt-5 text-4xl">Sua escolha está<br />em boas conversas.</h2>
         <p className="mt-5 text-sm leading-8 text-foreground-muted">Sua solicitação foi enviada à equipe OSTON. Enquanto isso, continue explorando as coleções.</p>
-        <Link href="/colecoes" className="button-primary mt-8">Explorar coleções <span aria-hidden="true">↗</span></Link>
+        <Link href="/colecoes" className="button-primary mt-8">Explorar coleções <ArrowUpRightIcon className="h-4 w-4 shrink-0" /></Link>
         <button type="button" onClick={() => { setStatus("idle"); setMessage(""); }} className="mt-5 block min-h-11 text-xs underline underline-offset-4">Enviar outra mensagem</button>
       </div>
     );
@@ -155,7 +156,7 @@ export function ContactForm({ collections, context = emptyContext, privacyUrl }:
           <textarea name="message" rows={4} maxLength={2000} defaultValue={context.message} placeholder="O que você gostaria de saber sobre o seu conjunto?" className="border border-border-strong bg-background px-3 py-3 leading-7" />
         </label>
         <button type="submit" className="button-primary w-full disabled:cursor-wait disabled:opacity-60">
-          {status === "loading" ? "Enviando solicitação…" : "Enviar solicitação"} <span aria-hidden="true">↗</span>
+          {status === "loading" ? "Enviando solicitação…" : "Enviar solicitação"} <ArrowUpRightIcon className="h-4 w-4 shrink-0" />
         </button>
         {privacyUrl ? <p className="text-xs leading-6 text-foreground-muted">Saiba como seus dados são tratados na <a href={privacyUrl} className="underline underline-offset-4">Política de Privacidade</a>.</p> : null}
       </fieldset>

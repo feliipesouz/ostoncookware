@@ -16,7 +16,7 @@ export function FeaturedCollections({
   return (
     <section className="collections-section" id="colecoes-em-destaque">
       <div className="site-grid">
-        <div className="section-heading-row editorial-enter">
+        <div className="section-heading-row editorial-enter" data-editorial-reveal>
           <div>
             <p className="eyebrow">{subtitle}</p>
             <h2 className="display-title">{title}</h2>

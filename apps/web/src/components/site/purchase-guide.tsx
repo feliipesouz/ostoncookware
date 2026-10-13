@@ -29,7 +29,7 @@ export function PurchaseGuide({
   return (
     <section className="purchase-section" aria-labelledby={`${id}-title`}>
       <div className="site-grid">
-        <div className="purchase-heading editorial-enter">
+        <div className="purchase-heading editorial-enter" data-editorial-reveal>
           <div>
             <p className="eyebrow">{eyebrow}</p>
             <h2 className="display-title" id={`${id}-title`}>
@@ -52,7 +52,7 @@ export function PurchaseGuide({
 
         <ol className="purchase-steps">
           {steps.map((step, index) => (
-            <li key={`${index}-${step.title}`} className="purchase-step editorial-enter">
+            <li key={`${index}-${step.title}`} className="purchase-step editorial-enter" data-editorial-reveal data-editorial-delay={Math.min(index, 3) * 80}>
               <span className="purchase-step-number" aria-hidden="true">
                 {String(index + 1).padStart(2, "0")}
               </span>

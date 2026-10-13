@@ -1,5 +1,6 @@
 "use client";
 
+import { ArrowIcon, ArrowUpRightIcon } from "@/components/site/icons";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import type { Collection, Product } from "@/lib/content";
@@ -28,7 +29,7 @@ export function CollectionExplorer({ collections }: { collections: Collection[] 
           <p className="text-sm text-foreground-muted" aria-live="polite">
             {visible.length} {visible.length === 1 ? "coleção para explorar" : "coleções para explorar"}
           </p>
-          {selected.length > 0 ? <a href="#compare-heading" className="button-link mt-2">Ver comparação ({selected.length}) <span aria-hidden="true">↓</span></a> : null}
+          {selected.length > 0 ? <a href="#compare-heading" className="button-link mt-2">Ver comparação ({selected.length}) <ArrowIcon className="h-4 w-4 shrink-0 rotate-90" /></a> : null}
         </div>
         <SearchField id="collection-search" label="Buscar uma coleção" value={query} onChange={setQuery} placeholder="Busque pelo nome ou estilo" />
       </div>
@@ -57,7 +58,7 @@ export function CollectionExplorer({ collections }: { collections: Collection[] 
                 </div>
                 <div className="mt-5 flex items-start justify-between gap-4">
                   <h2 className="font-display text-4xl">{collection.name}</h2>
-                  <span aria-hidden="true" className="pt-1 text-2xl text-brand transition-transform motion-safe:group-hover:translate-x-1">↗</span>
+                  <ArrowUpRightIcon className="mt-1 h-5 w-5 shrink-0 text-brand transition-transform motion-safe:group-hover:translate-x-1" />
                 </div>
                 {collection.shortDescription ? <p className="mt-3 text-sm leading-7 text-foreground-muted">{collection.shortDescription}</p> : null}
                 <p className="mt-5 text-[0.65rem] tracking-[0.22em] uppercase">
@@ -99,7 +100,7 @@ export function CollectionExplorer({ collections }: { collections: Collection[] 
               <tbody>
                 <tr>{selected.map((collection) => <td key={collection.id} className="px-3 align-top"><div className="relative aspect-square bg-background">{collection.coverImage ? <SiteImage src={mediaSrc(collection.coverImage.url)} alt={collection.coverImage.alt || collection.name} fill sizes="(max-width: 767px) 280px, 33vw" className="object-contain" /> : <ImagePlaceholder />}</div></td>)}</tr>
                 <tr>{selected.map((collection) => <td key={collection.id} className="px-3 pt-5 align-top text-sm leading-7 text-foreground-muted">{collection.shortDescription || "Conheça os detalhes desta coleção."}</td>)}</tr>
-                <tr>{selected.map((collection) => <td key={collection.id} className="px-3 pt-5 align-top"><Link href={"/colecoes/" + collection.slug} className="button-link">Conhecer {collection.name} <span aria-hidden="true">↗</span></Link><button type="button" onClick={() => toggleComparison(collection.id)} aria-label={"Remover " + collection.name + " da comparação"} className="mt-3 block min-h-11 text-xs text-foreground-muted underline underline-offset-4">Remover</button></td>)}</tr>
+                <tr>{selected.map((collection) => <td key={collection.id} className="px-3 pt-5 align-top"><Link href={"/colecoes/" + collection.slug} className="button-link">Conhecer {collection.name} <ArrowUpRightIcon className="h-4 w-4 shrink-0" /></Link><button type="button" onClick={() => toggleComparison(collection.id)} aria-label={"Remover " + collection.name + " da comparação"} className="mt-3 block min-h-11 text-xs text-foreground-muted underline underline-offset-4">Remover</button></td>)}</tr>
               </tbody>
             </table>
           </div>
@@ -186,7 +187,7 @@ export function ProductCard({ product }: { product: Product }) {
       </div>
       <div className="mt-5 flex items-start justify-between gap-4">
         <h3 className="font-display text-3xl">{product.name}</h3>
-        <span aria-hidden="true" className="text-2xl text-brand">↗</span>
+        <ArrowUpRightIcon className="h-5 w-5 shrink-0 text-brand" />
       </div>
       {product.shortDescription ? <p className="mt-3 text-sm leading-7 text-foreground-muted">{product.shortDescription}</p> : null}
       {detail && !product.isDemo ? <p className="mt-3 text-xs text-foreground-muted">{detail}</p> : null}

@@ -18,7 +18,7 @@ export function ExperienceBlock({ eyebrow, headline, body, imageUrl, imageAlt }:
   return (
     <section className="experience-section">
       <div className="site-grid experience-layout">
-        <figure className="editorial-enter">
+        <figure className="editorial-enter" data-editorial-reveal>
           <div className="experience-image">
             <SiteImage
               src={imageUrl || "/editorial/culinary-atmosphere.webp"}
@@ -33,7 +33,7 @@ export function ExperienceBlock({ eyebrow, headline, body, imageUrl, imageAlt }:
             <span>Cozinhar. Receber. Viver.</span>
           </figcaption>
         </figure>
-        <div className="experience-copy editorial-enter">
+        <div className="experience-copy editorial-enter" data-editorial-reveal data-editorial-delay="120">
           <p className="eyebrow">{eyebrow}</p>
           <h2 className="display-title">{headline}</h2>
           <p className="editorial-copy">{body}</p>
@@ -63,7 +63,7 @@ export function AmbassadorSlot({ eyebrow, headline, body, imageUrl, imageAlt }: 
             className="object-cover"
           />
         </div>
-        <div className="ambassador-copy editorial-enter">
+        <div className="ambassador-copy editorial-enter" data-editorial-reveal>
           <p className="eyebrow">{eyebrow}</p>
           <h2 className="display-title">{headline}</h2>
           <p className="editorial-copy">{body}</p>
@@ -112,7 +112,7 @@ export function CommercialCta({
           <p className="eyebrow">{eyebrow}</p>
           <ArrowUpRightIcon />
         </div>
-        <div className="commercial-copy editorial-enter">
+        <div className="commercial-copy editorial-enter" data-editorial-reveal>
           <h2 className="display-title">{headline}</h2>
           <p className="editorial-copy">{body}</p>
           <div className="commercial-actions">

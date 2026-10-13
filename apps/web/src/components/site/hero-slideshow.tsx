@@ -1,5 +1,6 @@
 "use client";
 
+import { ArrowIcon } from "@/components/site/icons";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
 /** Backgrounds rotate independently of the stable heading and calls to action. */
@@ -55,7 +56,7 @@ export function HeroSlideshow({ slides }: { slides: ReactNode[] }) {
       {slides.length > 1 ? (
         <div className="hero-slide-controls">
           <span aria-hidden="true">{String(active + 1).padStart(2, "0")} / {String(slides.length).padStart(2, "0")}</span>
-          <button type="button" onClick={() => { setPaused(true); setActive((value) => (value + 1) % slides.length); }} aria-label="Mostrar próxima imagem"><span aria-hidden="true">→</span></button>
+          <button type="button" onClick={() => { setPaused(true); setActive((value) => (value + 1) % slides.length); }} aria-label="Mostrar próxima imagem"><ArrowIcon className="h-4 w-4 shrink-0" /></button>
           {reducedMotion ? <span className="sr-only">Alternância automática desativada pela preferência de movimento reduzido.</span> : (
             <button type="button" onClick={() => setPaused((value) => !value)} aria-label={paused ? "Retomar alternância de imagens" : "Pausar alternância de imagens"}>
               <span aria-hidden="true">{paused ? "▶" : "Ⅱ"}</span>

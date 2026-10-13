@@ -29,7 +29,7 @@ export function Manifesto({
           <p className="eyebrow">{eyebrow}</p>
           <PresenceMark />
         </div>
-        <div className="editorial-enter">
+        <div className="editorial-enter" data-editorial-reveal>
           <h2 className="manifesto-statement">{headline}</h2>
           <div className="manifesto-body">
             <p className="editorial-copy">{body}</p>
@@ -55,7 +55,7 @@ export function Differentials({
   return (
     <section className="differentials-section">
       <div className="site-grid">
-        <div className="differentials-heading">
+        <div className="differentials-heading" data-editorial-reveal>
           <p className="eyebrow">A experiência OSTON</p>
           <h2>{title}</h2>
         </div>
@@ -64,7 +64,7 @@ export function Differentials({
           style={{ "--differentials-count": Math.min(items.length, 4) } as CSSProperties}
         >
           {items.map((item, index) => (
-            <article key={item.title} className="differential-item editorial-enter">
+            <article key={item.title} className="differential-item editorial-enter" data-editorial-reveal data-editorial-delay={Math.min(index, 3) * 80}>
               <span className="editorial-number">{String(index + 1).padStart(2, "0")}</span>
               <h3>{item.title}</h3>
               <p>{item.text}</p>

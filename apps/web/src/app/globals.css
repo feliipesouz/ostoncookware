@@ -945,25 +945,10 @@ body {
   .hero-content {
     animation: hero-enter 900ms var(--ease-editorial) both;
   }
-  @supports (animation-timeline: view()) {
-    .editorial-enter {
-      animation: editorial-enter linear both;
-      animation-timeline: view();
-      animation-range: entry 0% entry 85%;
-    }
-  }
 }
 @keyframes hero-enter {
   from {
     transform: translateY(1rem);
-  }
-  to {
-    transform: translateY(0);
-  }
-}
-@keyframes editorial-enter {
-  from {
-    transform: translateY(2rem);
   }
   to {
     transform: translateY(0);

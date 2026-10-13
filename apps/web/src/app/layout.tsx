@@ -4,6 +4,7 @@ import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import localFont from "next/font/local";
 import { PreviewBanner } from "@/components/site/preview-banner";
+import { EditorialMotion } from "@/components/site/editorial-motion";
 import { LeadAttribution } from "@/components/site/lead-attribution";
 import { getPublicSiteSafe, isDraftEnabled } from "@/lib/content";
 import { siteMetadata, siteUrl } from "@/lib/seo";
@@ -47,6 +48,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <PreviewBanner />
         <Suspense fallback={null}><LeadAttribution /></Suspense>
         {children}
+        <Suspense fallback={null}><EditorialMotion /></Suspense>
         <Analytics />
         <SpeedInsights />
       </body>
