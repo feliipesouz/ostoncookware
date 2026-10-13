@@ -1,3 +1,4 @@
+import { ArrowUpRightIcon } from "@/components/site/icons";
 import { ProductPrice } from "@/components/site/product-price";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -138,7 +139,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                   ? "Produto demonstrativo"
                   : (product.collectionName ?? "OSTON Cookware")}
               </p>
-              <h1 className="font-display mt-4 text-4xl leading-[1.04] md:text-5xl xl:text-6xl">
+              <h1 className="font-display mt-4 text-4xl leading-[1.04] md:text-5xl xl:text-6xl" data-editorial-reveal>
                 {product.name}
               </h1>
               {product.shortDescription ? (
@@ -163,7 +164,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                     rel="noopener noreferrer"
                     className="button-primary"
                   >
-                    Falar com consultor <span aria-hidden="true">↗</span>
+                    Falar com consultor <ArrowUpRightIcon className="h-4 w-4 shrink-0" />
                   </a>
                   <Link href="/colecoes" className="button-secondary">
                     Comparar as cores
@@ -210,7 +211,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           >
             <div>
               <p className="eyebrow">Conheça de perto</p>
-              <h2 id="product-details-heading" className="font-display mt-4 text-4xl md:text-5xl">
+              <h2 id="product-details-heading" className="font-display mt-4 text-4xl md:text-5xl" data-editorial-reveal>
                 Cada detalhe
                 <br />
                 <span className="italic">da sua escolha.</span>
@@ -226,7 +227,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                 rel="noopener noreferrer"
                 className="button-link mt-7"
               >
-                Tire suas dúvidas com a OSTON <span aria-hidden="true">↗</span>
+                Tire suas dúvidas com a OSTON <ArrowUpRightIcon className="h-4 w-4 shrink-0" />
               </a>
             </div>
             <div>

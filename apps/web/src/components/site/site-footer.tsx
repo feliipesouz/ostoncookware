@@ -57,7 +57,7 @@ export function SiteFooter({ settings, items }: { settings: Settings; items?: Na
               </li>
               <li>
                 <a href={consultation} target="_blank" rel="noopener noreferrer">
-                  WhatsApp ↗
+                  WhatsApp <ArrowUpRightIcon className="inline-block h-4 w-4 shrink-0 align-middle" />
                 </a>
               </li>
               {settings.email ? (
@@ -68,7 +68,7 @@ export function SiteFooter({ settings, items }: { settings: Settings; items?: Na
               {settings.instagram && isSafeCtaUrl(settings.instagram) ? (
                 <li>
                   <a href={settings.instagram} rel="noreferrer" target="_blank">
-                    Instagram ↗
+                    Instagram <ArrowUpRightIcon className="inline-block h-4 w-4 shrink-0 align-middle" />
                   </a>
                 </li>
               ) : null}

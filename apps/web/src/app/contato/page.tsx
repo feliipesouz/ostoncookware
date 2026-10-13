@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { PublicChrome } from "@/components/site/public-chrome";
 import { consultationUrl, DEFAULT_CONSULTATION_MESSAGE } from "@/lib/consultation";
-import { ArrowUpRightIcon } from "@/components/site/icons";
+import { ArrowIcon, ArrowUpRightIcon } from "@/components/site/icons";
 import { consultationContext } from "@/lib/catalog";
 import {
   consultantMessage,
@@ -101,7 +101,7 @@ export default async function ContactPage({
             ))}
           </ol>
           <Link href="/colecoes" className="button-link mt-6">
-            <span aria-hidden="true">←</span> Explorar as coleções
+            <ArrowIcon className="h-4 w-4 shrink-0 rotate-180" /> Explorar as coleções
           </Link>
         </div>
         <section

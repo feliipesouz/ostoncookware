@@ -1,3 +1,4 @@
+import { ArrowIcon, ArrowUpRightIcon } from "@/components/site/icons";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
@@ -81,8 +82,8 @@ export default async function CollectionPage({ params }: { params: Promise<{ slu
               <h1 className="display-title mt-5">{collection.name}</h1>
               {collection.shortDescription ? <p className="editorial-copy mt-6 max-w-lg">{collection.shortDescription}</p> : null}
               <div className="mt-9 flex flex-wrap gap-3">
-                <a href="#produtos" className="button-primary">Explorar o conjunto <span aria-hidden="true">↓</span></a>
-                <a href={contact} target="_blank" rel="noopener noreferrer" className="button-secondary">Falar com consultor <span aria-hidden="true">↗</span></a>
+                <a href="#produtos" className="button-primary">Explorar o conjunto <ArrowIcon className="h-4 w-4 shrink-0 rotate-90" /></a>
+                <a href={contact} target="_blank" rel="noopener noreferrer" className="button-secondary">Falar com consultor <ArrowUpRightIcon className="h-4 w-4 shrink-0" /></a>
               </div>
               {collection.description ? <p className="mt-9 max-w-xl border-t border-border pt-7 text-sm leading-8 whitespace-pre-line text-foreground-muted">{collection.description}</p> : null}
             </div>
@@ -97,7 +98,7 @@ export default async function CollectionPage({ params }: { params: Promise<{ slu
               <section id="produtos" className="border-y border-border py-12">
                 <h2 className="font-display text-3xl">Conheça esta coleção com a nossa equipe.</h2>
                 <p className="mt-3 text-sm text-foreground-muted">Consulte os produtos e as condições de atendimento.</p>
-                <a href={contact} target="_blank" rel="noopener noreferrer" className="button-link mt-6">Falar com consultor <span aria-hidden="true">↗</span></a>
+                <a href={contact} target="_blank" rel="noopener noreferrer" className="button-link mt-6">Falar com consultor <ArrowUpRightIcon className="h-4 w-4 shrink-0" /></a>
               </section>
             )}
             {otherCollections.length ? (
@@ -105,7 +106,7 @@ export default async function CollectionPage({ params }: { params: Promise<{ slu
                 <p className="eyebrow">Continue explorando</p>
                 <h2 id="other-collections" className="font-display mt-3 text-3xl">Outras cores, outras possibilidades.</h2>
                 <div className="mt-7 flex flex-wrap gap-3">
-                  {otherCollections.map((item) => <Link key={item.id} href={"/colecoes/" + item.slug} className="button-secondary">{item.name} <span aria-hidden="true">↗</span></Link>)}
+                  {otherCollections.map((item) => <Link key={item.id} href={"/colecoes/" + item.slug} className="button-secondary">{item.name} <ArrowUpRightIcon className="h-4 w-4 shrink-0" /></Link>)}
                 </div>
               </section>
             ) : null}

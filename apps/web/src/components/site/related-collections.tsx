@@ -12,7 +12,7 @@ export function RelatedCollections({ collections }: { collections: Collection[] 
       className="site-grid mt-14 border-t border-border pt-8 md:mt-20 md:pt-10"
       aria-labelledby="palette-heading"
     >
-      <div className="flex flex-wrap items-end justify-between gap-4">
+      <div className="flex flex-wrap items-end justify-between gap-4" data-editorial-reveal>
         <div>
           <p className="eyebrow">Mais possibilidades</p>
           <h2 id="palette-heading" className="font-display mt-3 text-3xl md:text-4xl">

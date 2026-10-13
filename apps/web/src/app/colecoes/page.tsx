@@ -1,3 +1,4 @@
+import { ArrowUpRightIcon } from "@/components/site/icons";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { CollectionExplorer } from "@/components/site/catalogue-browser";
@@ -45,15 +46,15 @@ export default async function CollectionsPage() {
       <PublicChrome settings={site.settings} navigation={site.navigation} announcement={site.announcement}>
         <main className="bg-background pb-24 md:pb-32">
           <div className="site-grid grid gap-8 pt-12 pb-14 md:grid-cols-12 md:pt-20 md:pb-20">
-            <div className="md:col-span-8">
+            <div className="md:col-span-8" data-editorial-reveal>
               <p className="eyebrow">O universo OSTON</p>
               <h1 className="display-title mt-5">Encontre a sua<br /><span className="italic text-brand">assinatura.</span></h1>
             </div>
-            <div className="md:col-span-4 md:self-end">
+            <div className="md:col-span-4 md:self-end" data-editorial-reveal data-editorial-delay="120">
               <p className="editorial-copy max-w-md">Uma escolha que começa pelo olhar. Explore as cores, conheça os conjuntos e imagine a OSTON na sua cozinha.</p>
               {site.settings.catalogPdf ? (
-                <CatalogDownload href={mediaSrc(site.settings.catalogPdf.url)} className="button-link mt-6">Consultar catálogo completo <span aria-hidden="true">↗</span></CatalogDownload>
-              ) : <Link href="/contato" className="button-link mt-6">Conte com nossa equipe <span aria-hidden="true">↗</span></Link>}
+                <CatalogDownload href={mediaSrc(site.settings.catalogPdf.url)} className="button-link mt-6">Consultar catálogo completo <ArrowUpRightIcon className="h-4 w-4 shrink-0" /></CatalogDownload>
+              ) : <Link href="/contato" className="button-link mt-6">Conte com nossa equipe <ArrowUpRightIcon className="h-4 w-4 shrink-0" /></Link>}
             </div>
           </div>
           <div className="site-grid">
@@ -61,13 +62,13 @@ export default async function CollectionsPage() {
               <div className="border-y border-border py-16">
                 <h2 className="font-display text-3xl">{result === null ? "O catálogo está temporariamente indisponível." : "As próximas escolhas começam aqui."}</h2>
                 <p className="mt-4 max-w-lg text-sm leading-7 text-foreground-muted">{result === null ? "Você pode tentar novamente em instantes ou falar com nossa equipe." : "Converse com nossa equipe para conhecer os conjuntos OSTON."}</p>
-                <Link href="/contato" className="button-primary mt-6">Falar com a OSTON <span aria-hidden="true">↗</span></Link>
+                <Link href="/contato" className="button-primary mt-6">Falar com a OSTON <ArrowUpRightIcon className="h-4 w-4 shrink-0" /></Link>
               </div>
             )}
           </div>
           <div className="site-grid mt-20 flex flex-col gap-6 border-t border-border pt-10 md:flex-row md:items-center md:justify-between">
             <div><p className="eyebrow">Uma escolha com atenção</p><h2 className="font-display mt-3 text-3xl md:text-4xl">Vamos encontrar a sua OSTON?</h2></div>
-            <Link href="/contato" className="button-secondary">Falar com um consultor <span aria-hidden="true">↗</span></Link>
+            <Link href="/contato" className="button-secondary">Falar com um consultor <ArrowUpRightIcon className="h-4 w-4 shrink-0" /></Link>
           </div>
         </main>
       </PublicChrome>

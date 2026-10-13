@@ -82,7 +82,7 @@ export function SetComposition({
   return (
     <section className="composition-section" aria-labelledby={`${id}-title`}>
       <div className="site-grid">
-        <div className="composition-heading editorial-enter">
+        <div className="composition-heading editorial-enter" data-editorial-reveal>
           <div>
             <p className="eyebrow">{eyebrow}</p>
             <h2 className="display-title" id={`${id}-title`}>
@@ -94,7 +94,7 @@ export function SetComposition({
 
         <div className="composition-layout" data-has-image={Boolean(imageUrl)}>
           {imageUrl ? (
-            <div className="composition-visual">
+            <div className="composition-visual" data-editorial-reveal>
               <SiteImage
                 src={imageUrl}
                 alt={imageAlt ?? "Conjunto OSTON"}

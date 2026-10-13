@@ -1,5 +1,6 @@
 "use client";
 
+import { ArrowIcon } from "@/components/site/icons";
 import { useEffect, useId, useRef, useState } from "react";
 import type { Media } from "@/lib/content";
 import { mediaSrc } from "@/lib/api";
@@ -59,9 +60,9 @@ export function ProductGallery({ images, name, demo = false }: { images: Media[]
         {images.length > 1 ? (
           <div className="flex gap-1">
             <button type="button" aria-label="Imagem anterior" onClick={() => setSelected((selected + images.length - 1) % images.length)}
-              className="min-h-11 min-w-11 border border-border"><span aria-hidden="true">←</span></button>
+              className="inline-flex min-h-11 min-w-11 items-center justify-center border border-border"><ArrowIcon className="h-4 w-4 shrink-0 rotate-180" /></button>
             <button type="button" aria-label="Próxima imagem" onClick={() => setSelected((selected + 1) % images.length)}
-              className="min-h-11 min-w-11 border border-border"><span aria-hidden="true">→</span></button>
+              className="inline-flex min-h-11 min-w-11 items-center justify-center border border-border"><ArrowIcon className="h-4 w-4 shrink-0" /></button>
           </div>
         ) : null}
       </div>
