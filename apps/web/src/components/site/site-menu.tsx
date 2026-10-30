@@ -124,6 +124,9 @@ export function SiteMenu({
             >
               Falar com consultor <ArrowUpRightIcon />
             </a>
+            <Link href="/admin/login" className="button-secondary" onClick={close} prefetch={false}>
+              Entrar <ArrowUpRightIcon />
+            </Link>
             {catalog ? <CatalogDownload href={catalog} className="button-link" /> : null}
           </div>
           <p className="site-menu-signature">O prazer de estar presente.</p>

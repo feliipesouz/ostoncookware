@@ -2006,3 +2006,18 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .hero-slide { transition: none; }
 }
+
+/* Keep account access within reach on compact headers; consultation remains in the menu. */
+.header-login {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+@media (max-width: 767px) {
+  .header-actions > a.header-consultant:not(.header-login) {
+    display: none;
+  }
+  .header-login {
+    display: inline-flex;
+    min-height: 44px;
+  }
+}

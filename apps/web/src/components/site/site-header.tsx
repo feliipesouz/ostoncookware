@@ -43,6 +43,9 @@ export function SiteHeader({
           >
             Falar com consultor <ArrowUpRightIcon />
           </a>
+          <Link href="/admin/login" className="header-consultant header-login" prefetch={false}>
+            Entrar <ArrowUpRightIcon />
+          </Link>
           <SiteMenu
             items={nav}
             catalog={catalog}
