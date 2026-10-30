@@ -44,6 +44,48 @@ test.describe("auth session", () => {
     await expect(page.locator("body")).not.toHaveCSS("overflow", "hidden");
   });
 
+  test("proprietário cria acesso independente sem permitir criação de OWNER", async ({ page, browser, baseURL }) => {
+    test.skip(!baseURL || !["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname), "Cria apenas contas no banco E2E descartável");
+    await loginAsAdmin(page);
+    const email = `cms-editor-${Date.now()}@example.test`;
+    const password = "EditorTestPassword123";
+    const payload = { name: "Editor E2E", email, password, role: "EDITOR" };
+    const invalid = await page.request.post("/v1/admin/users", { data: { ...payload, role: "OWNER" } });
+    expect(invalid.status()).toBe(400);
+    await page.goto("/admin/usuarios");
+    await page.getByRole("button", { name: "Novo usuário", exact: true }).click();
+    const form = page.locator("#new-user-form");
+    await form.locator('input[name="name"]').fill(payload.name);
+    await form.locator('input[name="email"]').fill(email);
+    await form.locator('input[name="password"]').fill(password);
+    await form.locator('input[name="confirmPassword"]').fill(password);
+    const saving = page.waitForResponse((response) => new URL(response.url()).pathname === "/v1/admin/users" && response.request().method() === "POST");
+    await form.getByRole("button", { name: "Criar acesso", exact: true }).click();
+    const created = await saving;
+    expect(created.status()).toBe(201);
+    const result = await created.json();
+    expect(result.data).toMatchObject({ name: payload.name, email, role: "EDITOR" });
+    expect(result.data).not.toHaveProperty("password");
+    expect(result.data).not.toHaveProperty("accounts");
+    const duplicate = await page.request.post("/v1/admin/users", { data: { ...payload, email: email.toUpperCase() } });
+    expect(duplicate.status()).toBe(409);
+    await page.goto("/admin/usuarios");
+    await expect(page.getByRole("cell", { name: email, exact: true })).toBeVisible();
+    const editorContext = await browser.newContext({ baseURL });
+    try {
+      const login = await editorContext.request.post("/api/auth/sign-in/email", { data: { email, password }, headers: { Origin: baseURL! } });
+      expect(login.ok()).toBeTruthy();
+      const me = await editorContext.request.get("/v1/admin/me");
+      expect((await me.json()).role).toBe("EDITOR");
+      const denied = await editorContext.request.post("/v1/admin/users", { data: { ...payload, email: `other-${email}` } });
+      expect(denied.status()).toBe(403);
+      const ownerMe = await page.request.get("/v1/admin/me");
+      expect((await ownerMe.json()).role).toBe("OWNER");
+    } finally {
+      await editorContext.close();
+    }
+  });
+
   test("login válido abre o dashboard e logout encerra a sessão", async ({ page }) => {
     await loginAsAdmin(page);
     await page.getByRole("button", { name: /sair/i }).click();
