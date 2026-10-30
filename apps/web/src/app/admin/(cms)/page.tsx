@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { DashboardPanel } from "@/components/admin/ui/dashboard-panel";
 import { PageHeader } from "@/components/admin/ui/page-header";
 import { StatusBadge } from "@/components/admin/ui/status-badge";
 import { adminFetch } from "@/lib/admin";
@@ -116,19 +117,13 @@ export default async function DashboardPage() {
       </div>
 
       <div className="mt-10 grid gap-8 lg:grid-cols-2">
-        <section>
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg">Leads recentes</h2>
-            <Link href="/admin/leads" className="text-xs underline">
-              Abrir fila
-            </Link>
-          </div>
-          <ul className="mt-4 divide-y divide-border">
+        <DashboardPanel title="Leads recentes" count={data?.recentLeads.length ?? 0} action={<Link href="/admin/leads" className="text-xs underline underline-offset-4">Abrir fila completa</Link>}>
+          <ul className="divide-y divide-border">
             {(data?.recentLeads ?? []).length === 0 ? (
-              <li className="py-6 text-sm text-foreground-muted">Nenhum lead ainda. O formulário de contato alimenta esta fila.</li>
+              <li className="py-6 text-sm text-foreground-muted">Nenhum lead registrado ainda.</li>
             ) : (
               data?.recentLeads.map((lead) => (
-                <li key={lead.id} className="flex items-center justify-between py-3 text-sm">
+                <li key={lead.id} className="flex items-center justify-between gap-3 break-words py-4 text-sm">
                   <Link href={`/admin/leads/${lead.id}`} className="underline">
                     {lead.name}
                   </Link>
@@ -137,27 +132,21 @@ export default async function DashboardPage() {
               ))
             )}
           </ul>
-        </section>
-        <section>
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg">Últimas alterações</h2>
-            <Link href="/admin/auditoria" className="text-xs underline">
-              Auditoria
-            </Link>
-          </div>
-          <ul className="mt-4 divide-y divide-border">
+        </DashboardPanel>
+        <DashboardPanel title="Últimas alterações" count={data?.recentAudit.length ?? 0} action={<Link href="/admin/auditoria" className="text-xs underline underline-offset-4">Ver auditoria completa</Link>}>
+          <ul className="divide-y divide-border">
             {(data?.recentAudit ?? []).length === 0 ? (
               <li className="py-6 text-sm text-foreground-muted">Nenhuma alteração registrada hoje.</li>
             ) : (
               data?.recentAudit.map((item) => (
-                <li key={item.id} className="py-3 text-sm">
+                <li key={item.id} className="break-words py-4 text-sm">
                   {item.humanMessage ?? `${item.action} · ${item.entity}`}
                   <span className="block text-xs text-foreground-muted">{formatRelativeDay(item.createdAt)}</span>
                 </li>
               ))
             )}
           </ul>
-        </section>
+        </DashboardPanel>
       </div>
     </div>
   );
@@ -170,21 +159,20 @@ function deltaHint(delta: number) {
 
 function Breakdown({ title, rows }: { title: string; rows: { label: string; count: number }[] }) {
   return (
-    <section>
-      <h2 className="text-lg">{title}</h2>
-      <ul className="mt-4 divide-y divide-border text-sm">
+    <DashboardPanel title={title} count={rows.length}>
+      <ul className="divide-y divide-border text-sm">
         {rows.length === 0 ? (
           <li className="py-6 text-foreground-muted">Sem dados no período.</li>
         ) : (
           rows.map((row) => (
-            <li key={row.label} className="flex justify-between py-3">
+            <li key={row.label} className="flex justify-between gap-4 break-words py-3">
               <span>{row.label || "—"}</span>
               <span>{row.count}</span>
             </li>
           ))
         )}
       </ul>
-    </section>
+    </DashboardPanel>
   );
 }
 
