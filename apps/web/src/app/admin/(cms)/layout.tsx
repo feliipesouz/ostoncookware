@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import { AdminShell, type NavGroup } from "@/components/admin/admin-shell";
 import { adminFetch } from "@/lib/admin";
 
@@ -54,7 +55,12 @@ async function getMe() {
 
 async function logout() {
   "use server";
-  await adminFetch("/api/auth/sign-out", { method: "POST" });
+  const response = await adminFetch("/api/auth/sign-out", { method: "POST" });
+  if (!response.ok) throw new Error("Não foi possível encerrar a sessão. Tente novamente.");
+  const cookieStore = await cookies();
+  for (const cookie of cookieStore.getAll()) {
+    if (/^(?:__Secure-)?better-auth\./.test(cookie.name)) cookieStore.delete(cookie.name);
+  }
   redirect("/admin/login");
 }
 
