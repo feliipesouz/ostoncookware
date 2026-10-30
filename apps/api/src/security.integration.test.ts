@@ -20,6 +20,11 @@ describe.skipIf(!enabled)("API authorization", () => {
     });
     expect(upload.statusCode).toBe(401);
 
+    const createUser = await app.inject({ method: "POST", url: "/v1/admin/users", payload: {
+      name: "Unauthorized", email: "unauthorized@example.test", password: "ExamplePassword123", role: "ADMIN",
+    } });
+    expect(createUser.statusCode).toBe(401);
+
     const users = await app.inject({
       method: "PATCH",
       url: "/v1/admin/users/someone",

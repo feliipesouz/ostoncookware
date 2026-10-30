@@ -1,12 +1,13 @@
 import type { FastifyInstance } from "fastify";
-import { adminUserRoleUpdateSchema, paginationQuerySchema } from "@oston/contracts";
+import { adminUserCreateSchema, adminUserRoleUpdateSchema, paginationQuerySchema } from "@oston/contracts";
 import { Prisma, prisma } from "@oston/database";
 import { humanAuditMessage } from "../../lib/audit-copy.js";
 import { sendProblem } from "../../lib/errors.js";
 import { HttpError } from "../../lib/errors.js";
-import { noStore, requireUser } from "../../lib/http.js";
+import { clientIp, noStore, requireUser } from "../../lib/http.js";
 import { toPage } from "../../lib/pagination.js";
 import { writeAudit } from "../../lib/audit.js";
+import { auth } from "../auth/infrastructure/auth.js";
 
 function parseDateBound(value: unknown, endOfDay: boolean) {
   if (typeof value !== "string" || value.length === 0) {
@@ -91,6 +92,42 @@ export async function registerAuditRoutes(app: FastifyInstance) {
 }
 
 export async function registerUserRoutes(app: FastifyInstance) {
+  app.post("/v1/admin/users", async (request, reply) => {
+    try {
+      noStore(reply);
+      const actor = await requireUser(request, "users:write");
+      const payload = adminUserCreateSchema.parse(request.body);
+      const existing = await prisma.user.findFirst({ where: { email: { equals: payload.email, mode: "insensitive" } }, select: { id: true } });
+      if (existing) throw new HttpError(409, "Este e-mail já possui acesso ao CMS.", { code: "EMAIL_ALREADY_EXISTS" });
+      const context = await auth.$context;
+      const password = await context.password.hash(payload.password);
+      const id = context.generateId({ model: "user" }) as string;
+      const data = await prisma.$transaction(async (tx) => {
+        const user = await tx.user.create({
+          data: {
+            id, name: payload.name, email: payload.email, role: payload.role,
+            accounts: { create: {
+              id: context.generateId({ model: "account" }) as string,
+              issuer: "local:credential", accountId: id, providerId: "credential", password,
+            } },
+          },
+          select: { id: true, name: true, email: true, role: true, createdAt: true },
+        });
+        await tx.auditLog.create({ data: {
+          actorId: actor.id, actorEmail: actor.email, action: "CREATE", entity: "user", entityId: id,
+          metadata: { name: user.name, role: user.role }, ip: clientIp(request),
+        } });
+        return user;
+      });
+      return reply.status(201).send({ data });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+        return sendProblem(request, reply, new HttpError(409, "Este e-mail já possui acesso ao CMS.", { code: "EMAIL_ALREADY_EXISTS" }));
+      }
+      return sendProblem(request, reply, error);
+    }
+  });
+
   app.get("/v1/admin/users", async (request, reply) => {
     try {
       noStore(reply);

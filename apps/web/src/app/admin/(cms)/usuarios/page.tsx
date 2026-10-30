@@ -21,7 +21,7 @@ export default async function UsersPage() {
     <div>
       <PageHeader
         title="Usuários"
-        description="Não há cadastro público. O primeiro OWNER é criado com pnpm admin:create. A API não promove ninguém a OWNER."
+        description="Gerencie as pessoas que acessam o painel e defina as permissões de cada uma."
         breadcrumbs={[{ href: "/admin", label: "CMS" }, { label: "Usuários" }]}
       />
       <UsersTable initial={data} canWrite={role === "OWNER"} />
